@@ -3,8 +3,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   dishInputSchema,
   dishStatusSchema,
+  featuredSchema,
+  idSchema,
   orderStatusInputSchema,
   restaurantDecisionSchema,
+  type AdminOrder,
   type AdminOverview,
 } from "./admin-schemas";
 
@@ -37,9 +40,14 @@ export const getAdminOverview = createServerFn({ method: "GET" })
     return {
       restaurants: restaurants.data ?? [],
       dishes: dishes.data ?? [],
-      orders: orders.data ?? [],
+      orders: (orders.data ?? []).map((o: Record<string, unknown>) => ({
+        ...o,
+        items: Array.isArray(o.items) ? o.items : [],
+      })) as AdminOverview["orders"],
     };
   });
+
+export type { AdminOrder };
 
 export const checkIsAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -71,14 +79,12 @@ export const decideRestaurant = createServerFn({ method: "POST" })
 
 export const setRestaurantFeatured = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    restaurantDecisionSchema.pick({ id: true }).extend(dishStatusSchema.shape).partial({ available: true }).parse(input),
-  )
+  .inputValidator((input: unknown) => featuredSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { error } = await context.supabase
       .from("restaurants")
-      .update({ featured: Boolean(data.available) })
+      .update({ featured: data.featured })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -122,7 +128,7 @@ export const setDishAvailability = createServerFn({ method: "POST" })
 
 export const deleteDish = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => restaurantDecisionSchema.pick({ id: true }).parse(input))
+  .inputValidator((input: unknown) => idSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { error } = await context.supabase.from("dishes").delete().eq("id", data.id);
