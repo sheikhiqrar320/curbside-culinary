@@ -3,7 +3,7 @@ import { Clock, Heart, Star } from "lucide-react";
 import { useState } from "react";
 import { DishCard } from "@/components/dish-card";
 import { brand } from "@/lib/brand";
-import { dishesFor, getRestaurant } from "@/lib/catalog";
+import { dishesFor, getRestaurant, type Dish, type Restaurant } from "@/lib/catalog";
 
 export const Route = createFileRoute("/restaurants/$slug")({
   loader: ({ params }) => {
@@ -30,7 +30,7 @@ export const Route = createFileRoute("/restaurants/$slug")({
 });
 
 function RestaurantPage() {
-  const { restaurant, menu } = Route.useLoaderData();
+  const { restaurant, menu } = Route.useLoaderData() as { restaurant: Restaurant; menu: Dish[] };
   const [favorite, setFavorite] = useState(false);
   const categoriesInMenu = Array.from(new Set(menu.map((d) => d.category)));
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
