@@ -11,14 +11,21 @@ import {
   type AdminOverview,
 } from "./admin-schemas";
 
+/** Reads the caller's admin role from user_roles (RLS: callers only see their own rows). */
+async function isAdmin(context: { supabase: any; userId: string }) {
+  const { data, error } = await context.supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", context.userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error) throw new Error("Could not verify permissions");
+  return Boolean(data);
+}
+
 /** Throws unless the caller holds the admin role (checked server-side, RLS-backed). */
 async function assertAdmin(context: { supabase: any; userId: string }) {
-  const { data, error } = await context.supabase.rpc("has_role", {
-    _user_id: context.userId,
-    _role: "admin",
-  });
-  if (error) throw new Error("Could not verify permissions");
-  if (!data) throw new Error("Forbidden: admin access required");
+  if (!(await isAdmin(context))) throw new Error("Forbidden: admin access required");
 }
 
 export const getAdminOverview = createServerFn({ method: "GET" })
@@ -52,11 +59,7 @@ export type { AdminOrder };
 export const checkIsAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    return { isAdmin: Boolean(data), userId: context.userId };
+    return { isAdmin: await isAdmin(context), userId: context.userId };
   });
 
 export const decideRestaurant = createServerFn({ method: "POST" })
