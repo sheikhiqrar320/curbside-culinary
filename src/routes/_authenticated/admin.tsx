@@ -137,20 +137,36 @@ function AdminPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-3xl font-bold">Admin dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            Approvals, menus, live orders and revenue — all server-verified.
-          </p>
+      <div className="card-surface relative overflow-hidden p-6">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-primary/15 blur-3xl"
+        />
+        <div className="relative flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              <ShieldAlert className="size-3.5" /> Server-verified admin
+            </span>
+            <h1 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+              Control room
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Approvals, menus, live orders and revenue in one place.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => overview.refetch()} disabled={overview.isFetching}>
+              {overview.isFetching ? "Refreshing…" : "Refresh"}
+            </Button>
+            <Button variant="outline" onClick={signOut}>
+              Sign out
+            </Button>
+          </div>
         </div>
-        <Button variant="outline" onClick={signOut}>
-          Sign out
-        </Button>
       </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Revenue" value={formatMoney(revenue)} hint={`${paid.length} paid orders`} icon={IndianRupee} />
+        <StatCard accent label="Revenue" value={formatMoney(revenue)} hint={`${paid.length} paid orders`} icon={IndianRupee} />
         <StatCard label="Live orders" value={String(live)} hint="Not yet delivered" icon={ShoppingBag} />
         <StatCard label="Restaurants" value={String(restaurants.length)} hint={`${restaurants.filter((r) => r.status === "approved").length} approved`} icon={Store} />
         <StatCard label="Pending approvals" value={String(pending)} hint="Waiting on you" icon={Clock} />
