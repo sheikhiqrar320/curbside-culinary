@@ -14,7 +14,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Order biryani, pizza, burgers and more from top Bengaluru kitchens. Live tracking, coupons and UPI, card or cash on delivery.",
+          "Order biryani, pizza, burgers and more from top Bengaluru kitchens. Live tracking, coupons and cash on delivery.",
       },
       { property: "og:title", content: "Slider — Food Delivery in Bengaluru" },
       {

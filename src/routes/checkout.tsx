@@ -9,20 +9,15 @@ export const Route = createFileRoute("/checkout")({
   head: () => ({
     meta: [
       { title: "Checkout | Slider" },
-      { name: "description", content: "Confirm your delivery address and pay by UPI, card or cash on delivery." },
+      { name: "description", content: "Confirm your delivery address and pay cash on delivery when your food arrives." },
       { property: "og:title", content: "Checkout | Slider" },
-      { property: "og:description", content: "Confirm your address and pay by UPI, card or cash on delivery." },
+      { property: "og:description", content: "Confirm your address and pay cash on delivery." },
     ],
   }),
   component: CheckoutPage,
 });
 
-const PAYMENT_METHODS = [
-  { id: "upi", label: "UPI — Google Pay, PhonePe, Paytm" },
-  { id: "card", label: "Credit or debit card" },
-  { id: "netbanking", label: "Net banking" },
-  { id: "cod", label: "Cash on delivery" },
-];
+const PAYMENT_METHODS = [{ id: "cod", label: "Cash on delivery" }];
 
 const SAVED_ADDRESSES = [
   { id: "home", label: "Home", value: "402, Palm Grove, 5th Block Koramangala, Bengaluru 560095" },
@@ -36,7 +31,7 @@ function CheckoutPage() {
   const [phone, setPhone] = useState("");
   const [addressId, setAddressId] = useState(SAVED_ADDRESSES[0].id);
   const [customAddress, setCustomAddress] = useState("");
-  const [payment, setPayment] = useState("upi");
+  const [payment, setPayment] = useState("cod");
   const [placing, setPlacing] = useState(false);
 
   if (cart.lines.length === 0) {
@@ -145,8 +140,8 @@ function CheckoutPage() {
             ))}
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
-            Card and UPI payments are simulated in this build. Connect a payment provider to take real
-            money.
+            Cash on delivery only — pay the rider in cash when your order arrives. Online payments are
+            not accepted.
           </p>
         </section>
       </div>

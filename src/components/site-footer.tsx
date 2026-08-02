@@ -8,8 +8,8 @@ export function SiteFooter() {
         <div className="md:col-span-2">
           <p className="font-display text-2xl font-bold text-primary">{brand.name}</p>
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
-            {brand.tagline} Order from {brand.city}'s best kitchens, track every step, and pay the way
-            you like — UPI, cards or cash.
+            {brand.tagline} Order from {brand.city}'s best kitchens, track every step, and pay cash on
+            delivery.
           </p>
           <p className="mt-6 text-sm text-muted-foreground">
             {brand.address}
@@ -38,11 +38,11 @@ export function SiteFooter() {
           </ul>
         </div>
         <div>
-          <h4 className="text-sm font-semibold">We accept</h4>
+          <h4 className="text-sm font-semibold">Payment</h4>
           <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
-            <li>UPI · Google Pay · PhonePe</li>
-            <li>Credit &amp; debit cards</li>
-            <li>Cash on delivery</li>
+            <li>Cash on delivery only</li>
+            <li>No advance payment needed</li>
+            <li>Pay the rider when it arrives</li>
           </ul>
         </div>
       </div>
