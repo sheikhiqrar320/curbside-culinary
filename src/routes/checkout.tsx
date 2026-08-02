@@ -9,9 +9,9 @@ export const Route = createFileRoute("/checkout")({
   head: () => ({
     meta: [
       { title: "Checkout | Slider" },
-      { name: "description", content: "Confirm your delivery address and pay by UPI, card or cash on delivery." },
+      { name: "description", content: "Confirm your delivery address and pay cash on delivery when your food arrives." },
       { property: "og:title", content: "Checkout | Slider" },
-      { property: "og:description", content: "Confirm your address and pay by UPI, card or cash on delivery." },
+      { property: "og:description", content: "Confirm your address and pay cash on delivery." },
     ],
   }),
   component: CheckoutPage,
