@@ -10,6 +10,9 @@ import { ApprovalsPanel } from "@/components/admin/approvals-panel";
 import { MenuPanel } from "@/components/admin/menu-panel";
 import { OrdersPanel } from "@/components/admin/orders-panel";
 import { AnalyticsPanel } from "@/components/admin/analytics-panel";
+import { LiveBoard } from "@/components/admin/live-board";
+import { MediaPanel } from "@/components/admin/media-panel";
+import { useAdminRealtime } from "@/hooks/use-admin-realtime";
 import { formatMoney } from "@/lib/brand";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -51,6 +54,8 @@ function AdminPage() {
     queryFn: () => overviewFn(),
     retry: false,
   });
+
+  useAdminRealtime(overview.isSuccess);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin", "overview"] });
   const onError = (e: unknown) =>
@@ -172,13 +177,19 @@ function AdminPage() {
         <StatCard label="Pending approvals" value={String(pending)} hint="Waiting on you" icon={Clock} />
       </div>
 
-      <Tabs defaultValue="analytics" className="mt-8">
-        <TabsList>
+      <Tabs defaultValue="live" className="mt-8">
+        <TabsList className="flex-wrap">
+          <TabsTrigger value="live">Live</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="approvals">Approvals</TabsTrigger>
           <TabsTrigger value="menu">Food</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
+          <TabsTrigger value="media">Images</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="live" className="mt-6">
+          <LiveBoard orders={orders} restaurants={restaurants} connected={overview.isSuccess} />
+        </TabsContent>
 
         <TabsContent value="analytics" className="mt-6">
           <AnalyticsPanel orders={orders} restaurants={restaurants} />
@@ -211,6 +222,10 @@ function AdminPage() {
             busy={busy}
             onStatus={(id, status: OrderStatusValue) => orderStatus.mutate({ data: { id, status } })}
           />
+        </TabsContent>
+
+        <TabsContent value="media" className="mt-6">
+          <MediaPanel restaurants={restaurants} dishes={dishes} />
         </TabsContent>
       </Tabs>
     </div>
