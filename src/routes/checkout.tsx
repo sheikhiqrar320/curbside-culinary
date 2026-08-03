@@ -1,8 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/brand";
 import { useCart } from "@/lib/cart";
+import { restaurants as catalogRestaurants } from "@/lib/catalog";
+import { placeOrder } from "@/lib/orders.functions";
 import { linesToItems, newOrderId, saveOrder } from "@/lib/orders";
 
 export const Route = createFileRoute("/checkout")({
@@ -27,6 +30,7 @@ const SAVED_ADDRESSES = [
 function CheckoutPage() {
   const cart = useCart();
   const navigate = useNavigate();
+  const submitOrder = useServerFn(placeOrder);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [addressId, setAddressId] = useState(SAVED_ADDRESSES[0].id);
@@ -53,7 +57,7 @@ function CheckoutPage() {
       ? customAddress
       : (SAVED_ADDRESSES.find((a) => a.id === addressId)?.value ?? "");
 
-  const placeOrder = (e: React.FormEvent) => {
+  const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim().length < 2) return toast.error("Please enter your name.");
     if (!/^[0-9]{10}$/.test(phone.replace(/\D/g, "").slice(-10)))
@@ -75,14 +79,39 @@ function CheckoutPage() {
       tax: cart.tax,
       total: cart.total,
     };
-    saveOrder(order);
-    cart.clear();
-    toast.success("Order placed — the kitchen has been notified.");
-    navigate({ to: "/orders/$id", params: { id: order.id } });
+
+    const firstDish = cart.lines[0]?.dish;
+    const slug = catalogRestaurants.find((r) => r.id === firstDish?.restaurantId)?.slug;
+
+    try {
+      await submitOrder({
+        data: {
+          code: order.id,
+          restaurant_slug: slug,
+          customer_name: order.name,
+          phone: order.phone,
+          address: order.address,
+          items: order.items,
+          subtotal: Math.round(order.subtotal),
+          discount: Math.round(order.discount),
+          delivery_fee: Math.round(order.deliveryFee),
+          tax: Math.round(order.tax),
+          total: Math.round(order.total),
+        },
+      });
+      saveOrder(order);
+      cart.clear();
+      toast.success("Request sent — your order is confirmed once the admin approves it.");
+      navigate({ to: "/orders/$id", params: { id: order.id } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not place the order. Try again.");
+    } finally {
+      setPlacing(false);
+    }
   };
 
   return (
-    <form onSubmit={placeOrder} className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-3">
+    <form onSubmit={handlePlaceOrder} className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
         <h1 className="font-display text-3xl font-bold">Checkout</h1>
 
@@ -143,6 +172,9 @@ function CheckoutPage() {
             Cash on delivery only — pay the rider in cash when your order arrives. Online payments are
             not accepted.
           </p>
+          <p className="mt-2 text-xs font-medium text-primary">
+            Orders are confirmed only after our admin approves them.
+          </p>
         </section>
       </div>
 
@@ -184,7 +216,7 @@ function CheckoutPage() {
             disabled={placing}
             className="mt-6 w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground disabled:opacity-60"
           >
-            {placing ? "Placing order…" : `Place order · ${formatMoney(cart.total)}`}
+            {placing ? "Sending request…" : `Request order · ${formatMoney(cart.total)}`}
           </button>
         </div>
       </aside>
