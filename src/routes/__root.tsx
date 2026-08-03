@@ -15,6 +15,7 @@ import { CartProvider } from "@/lib/cart";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/ui/sonner";
+import { SplashIntro } from "@/components/splash-intro";
 
 function NotFoundComponent() {
   return (
@@ -135,6 +136,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <CartProvider>
+        <SplashIntro />
         <div className="flex min-h-screen flex-col">
           <SiteHeader />
           <main className="flex-1">

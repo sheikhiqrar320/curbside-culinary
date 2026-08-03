@@ -1,4 +1,6 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Check, X } from "lucide-react";
 import { formatMoney } from "@/lib/brand";
 import {
   ORDER_STATUS_LABEL,
@@ -9,7 +11,7 @@ import {
 
 const TILES: { key: "active" | OrderStatusValue; label: string; klass: string }[] = [
   { key: "active", label: "Active orders", klass: "bg-primary/10 text-primary" },
-  { key: "received", label: "New orders", klass: "bg-muted text-foreground" },
+  { key: "received", label: "Awaiting approval", klass: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
   { key: "preparing", label: "Preparing", klass: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
   { key: "out_for_delivery", label: "Out for delivery", klass: "bg-sky-500/15 text-sky-600 dark:text-sky-400" },
   { key: "delivered", label: "Completed", klass: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
@@ -20,10 +22,14 @@ export function LiveBoard({
   orders,
   restaurants,
   connected,
+  onStatus,
+  busy,
 }: {
   orders: AdminOrder[];
   restaurants: AdminRestaurant[];
   connected: boolean;
+  onStatus: (id: string, status: OrderStatusValue) => void;
+  busy: boolean;
 }) {
   const count = (key: "active" | OrderStatusValue) =>
     key === "active"
@@ -64,14 +70,35 @@ export function LiveBoard({
             >
               <div className="min-w-0">
                 <p className="font-semibold">
-                  {o.code} <Badge variant="secondary">{ORDER_STATUS_LABEL[o.status]}</Badge>
+                  {o.code}{" "}
+                  <Badge variant="secondary">
+                    {o.status === "received" ? "Awaiting approval" : ORDER_STATUS_LABEL[o.status]}
+                  </Badge>
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
                   {o.customer_name} · {nameOf(o.restaurant_id)} · {o.payment_method.toUpperCase()} ·{" "}
                   {new Date(o.placed_at).toLocaleTimeString()}
                 </p>
               </div>
-              <span className="font-semibold">{formatMoney(o.total)}</span>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">{formatMoney(o.total)}</span>
+                {o.status === "received" && (
+                  <>
+                    <Button size="sm" disabled={busy} onClick={() => onStatus(o.id, "accepted")}>
+                      <Check className="size-4" /> Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy}
+                      className="text-destructive"
+                      onClick={() => onStatus(o.id, "cancelled")}
+                    >
+                      <X className="size-4" /> Reject
+                    </Button>
+                  </>
+                )}
+              </div>
             </li>
           ))}
           {feed.length === 0 && (

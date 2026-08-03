@@ -151,3 +151,16 @@ export const setOrderStatus = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Wipes all order history so the dashboard starts from zero again. Admin only. */
+export const resetDashboard = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { error, count } = await context.supabase
+      .from("orders")
+      .delete({ count: "exact" })
+      .not("id", "is", null);
+    if (error) throw new Error(error.message);
+    return { ok: true, deleted: count ?? 0 };
+  });

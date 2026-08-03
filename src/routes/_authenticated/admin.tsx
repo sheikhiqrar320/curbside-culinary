@@ -1,8 +1,19 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ShieldAlert, IndianRupee, ShoppingBag, Store, Clock } from "lucide-react";
+import { ShieldAlert, IndianRupee, ShoppingBag, Store, Clock, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/admin/stat-card";
@@ -19,6 +30,7 @@ import {
   decideRestaurant,
   deleteDish,
   getAdminOverview,
+  resetDashboard,
   saveDish,
   setDishAvailability,
   setOrderStatus,
@@ -91,6 +103,14 @@ function AdminPage() {
     onSuccess: () => { toast.success("Order status updated"); invalidate(); },
     onError,
   });
+  const reset = useMutation({
+    mutationFn: useServerFn(resetDashboard),
+    onSuccess: (r: { deleted: number }) => {
+      toast.success(`Dashboard reset — ${r.deleted} order${r.deleted === 1 ? "" : "s"} cleared`);
+      invalidate();
+    },
+    onError,
+  });
 
   const busy =
     decide.isPending ||
@@ -98,7 +118,8 @@ function AdminPage() {
     dishSave.isPending ||
     dishToggle.isPending ||
     dishRemove.isPending ||
-    orderStatus.isPending;
+    orderStatus.isPending ||
+    reset.isPending;
 
   async function signOut() {
     await queryClient.cancelQueries();
@@ -139,6 +160,7 @@ function AdminPage() {
     (o) => !["delivered", "cancelled"].includes(o.status),
   ).length;
   const pending = restaurants.filter((r) => r.status === "pending").length;
+  const awaiting = orders.filter((o) => o.status === "received").length;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -166,12 +188,35 @@ function AdminPage() {
             <Button variant="outline" onClick={signOut}>
               Sign out
             </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="text-destructive" disabled={reset.isPending}>
+                  <RotateCcw className="size-4" /> Reset dashboard
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Start the dashboard from zero?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This permanently deletes every order — live, completed and cancelled — so counters,
+                    revenue and charts begin again. Restaurants and menus are kept.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Keep data</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => reset.mutate({} as never)}>
+                    Reset everything
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </div>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard accent label="Revenue" value={formatMoney(revenue)} hint={`${paid.length} paid orders`} icon={IndianRupee} />
+        <StatCard label="Awaiting approval" value={String(awaiting)} hint="Confirm to start the kitchen" icon={Clock} />
         <StatCard label="Live orders" value={String(live)} hint="Not yet delivered" icon={ShoppingBag} />
         <StatCard label="Restaurants" value={String(restaurants.length)} hint={`${restaurants.filter((r) => r.status === "approved").length} approved`} icon={Store} />
         <StatCard label="Pending approvals" value={String(pending)} hint="Waiting on you" icon={Clock} />
@@ -188,7 +233,13 @@ function AdminPage() {
         </TabsList>
 
         <TabsContent value="live" className="mt-6">
-          <LiveBoard orders={orders} restaurants={restaurants} connected={overview.isSuccess} />
+          <LiveBoard
+            orders={orders}
+            restaurants={restaurants}
+            connected={overview.isSuccess}
+            busy={busy}
+            onStatus={(id, status) => orderStatus.mutate({ data: { id, status } })}
+          />
         </TabsContent>
 
         <TabsContent value="analytics" className="mt-6">

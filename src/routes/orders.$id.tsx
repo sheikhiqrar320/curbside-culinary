@@ -1,11 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Check, Printer } from "lucide-react";
+import { Check, Clock, Printer } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { brand, formatMoney } from "@/lib/brand";
 import { useCart } from "@/lib/cart";
 import { dishes } from "@/lib/catalog";
-import { loadOrders, ORDER_STAGES, stageFor, type Order } from "@/lib/orders";
+import { loadOrders, type Order } from "@/lib/orders";
+import { getOrderStatus } from "@/lib/orders.functions";
+import { CUSTOMER_STAGES, CUSTOMER_STATUS_LABEL, stageIndexFor } from "@/lib/order-schemas";
 
 export const Route = createFileRoute("/orders/$id")({
   head: ({ params }) => ({
@@ -24,13 +28,18 @@ function TrackOrderPage() {
   const navigate = useNavigate();
   const cart = useCart();
   const [order, setOrder] = useState<Order | null | undefined>(undefined);
-  const [, setTick] = useState(0);
+  const statusFn = useServerFn(getOrderStatus);
 
   useEffect(() => {
     setOrder(loadOrders().find((o) => o.id === id) ?? null);
-    const t = setInterval(() => setTick((n) => n + 1), 5000);
-    return () => clearInterval(t);
   }, [id]);
+
+  const live = useQuery({
+    queryKey: ["order-status", id],
+    queryFn: () => statusFn({ data: { code: id } }),
+    refetchInterval: 5000,
+    retry: false,
+  });
 
   if (order === undefined) {
     return <div className="mx-auto my-16 h-64 max-w-3xl animate-pulse rounded-2xl bg-muted" />;
@@ -47,8 +56,10 @@ function TrackOrderPage() {
     );
   }
 
-  const stage = stageFor(order.placedAt);
-  const canCancel = stage < 2;
+  const status = live.data?.status ?? "received";
+  const stage = stageIndexFor(status);
+  const cancelled = status === "cancelled";
+  const canCancel = !cancelled && stage < 2;
 
   const reorder = () => {
     order.items.forEach((item) => {
@@ -63,12 +74,27 @@ function TrackOrderPage() {
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <p className="text-sm text-muted-foreground">Order {order.id}</p>
       <h1 className="mt-1 font-display text-3xl font-bold">
-        {stage === 4 ? "Delivered. Enjoy!" : ORDER_STAGES[stage]}
+        {CUSTOMER_STATUS_LABEL[status] ?? "Waiting for admin approval"}
       </h1>
 
+      {status === "received" && (
+        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4 text-sm">
+          <Clock className="mt-0.5 size-4 shrink-0 animate-pulse text-primary" />
+          <p>
+            Your order is <span className="font-semibold">not confirmed yet</span>. The kitchen starts
+            only after an admin approves it — this page updates by itself.
+          </p>
+        </div>
+      )}
+      {cancelled && (
+        <div className="mt-4 rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+          This order was rejected or cancelled by the admin. You will not be charged.
+        </div>
+      )}
+
       <ol className="card-surface mt-8 space-y-0 p-6">
-        {ORDER_STAGES.map((label, i) => {
-          const done = i <= stage;
+        {CUSTOMER_STAGES.map((label, i) => {
+          const done = !cancelled && i <= stage;
           return (
             <li key={label} className="flex gap-4">
               <div className="flex flex-col items-center">
@@ -79,14 +105,14 @@ function TrackOrderPage() {
                 >
                   {done ? <Check className="size-3.5" /> : <span className="size-1.5 rounded-full bg-current" />}
                 </span>
-                {i < ORDER_STAGES.length - 1 && (
+                {i < CUSTOMER_STAGES.length - 1 && (
                   <span className={`h-10 w-0.5 ${i < stage ? "bg-primary" : "bg-border"}`} />
                 )}
               </div>
               <div className={done ? "" : "opacity-50"}>
                 <p className="font-semibold">{label}</p>
                 <p className="text-xs text-muted-foreground">
-                  {done ? "Completed" : "Pending"}
+                  {done ? "Completed" : cancelled ? "Stopped" : "Pending"}
                 </p>
               </div>
             </li>
@@ -104,7 +130,7 @@ function TrackOrderPage() {
           <br />
           <span className="text-muted-foreground">{order.address}</span>
           <br />
-          <span className="text-muted-foreground">Paid via {order.paymentMethod}</span>
+          <span className="text-muted-foreground">Payment: {order.paymentMethod}</span>
         </p>
         <ul className="mt-5 space-y-2 text-sm">
           {order.items.map((i) => (
@@ -133,7 +159,7 @@ function TrackOrderPage() {
           </div>
         </dl>
         <p className="mt-3 flex justify-between border-t border-border pt-3 font-display text-lg font-bold">
-          <span>Total paid</span>
+          <span>Total payable</span>
           <span>{formatMoney(order.total)}</span>
         </p>
       </section>
