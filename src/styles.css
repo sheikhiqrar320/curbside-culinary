@@ -181,3 +181,45 @@
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-card);
 }
+
+/* ---- Brand intro animation (SLIDER CAFE splash) ---- */
+@keyframes splash-rise {
+  0% { opacity: 0; transform: translateY(28px) scale(0.94); filter: blur(14px); }
+  60% { filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+@keyframes splash-fade-up {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes splash-rule {
+  0% { width: 0; opacity: 0; }
+  100% { width: min(22rem, 70vw); opacity: 1; }
+}
+@keyframes splash-breathe {
+  0%, 100% { transform: scale(1) translateZ(0); opacity: 0.75; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+@keyframes splash-steam {
+  0% { transform: translateY(12%) scale(1); opacity: 0.35; }
+  100% { transform: translateY(-14%) scale(1.15); opacity: 0; }
+}
+
+.splash-word {
+  animation: splash-rise 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.splash-word-2 {
+  animation-delay: 0.22s;
+}
+.splash-kicker {
+  animation: splash-fade-up 0.9s ease-out 0.5s both;
+}
+.splash-rule {
+  animation: splash-rule 1s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both;
+}
+.splash-glow {
+  animation: splash-breathe 3.2s ease-in-out infinite;
+}
+.splash-steam {
+  animation: splash-steam 3s ease-out infinite;
+}
