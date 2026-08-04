@@ -22,10 +22,7 @@ export const Route = createFileRoute("/checkout")({
 
 const PAYMENT_METHODS = [{ id: "cod", label: "Cash on delivery" }];
 
-const SAVED_ADDRESSES = [
-  { id: "home", label: "Home", value: "402, Palm Grove, 5th Block Koramangala, Bengaluru 560095" },
-  { id: "work", label: "Work", value: "WeWork Galaxy, Residency Road, Bengaluru 560025" },
-];
+const SAVED_ADDRESSES: { id: string; label: string; value: string }[] = [];
 
 function CheckoutPage() {
   const cart = useCart();

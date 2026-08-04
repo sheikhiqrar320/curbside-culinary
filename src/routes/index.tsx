@@ -10,16 +10,16 @@ import { categories, coupons, dishes, restaurants, reviews } from "@/lib/catalog
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Slider — Food Delivery in Bengaluru" },
+      { title: "Slider — Hot Food Delivered Fast" },
       {
         name: "description",
         content:
-          "Order biryani, pizza, burgers and more from top Bengaluru kitchens. Live tracking, coupons and cash on delivery.",
+          "Order biryani, pizza, burgers and more from our kitchen. Live tracking, coupons and cash on delivery.",
       },
-      { property: "og:title", content: "Slider — Food Delivery in Bengaluru" },
+      { property: "og:title", content: "Slider — Hot Food Delivered Fast" },
       {
         property: "og:description",
-        content: "Order from top Bengaluru kitchens with live tracking, coupons and flexible payments.",
+        content: "Order from our kitchen with live tracking, coupons and cash on delivery.",
       },
     ],
   }),
@@ -42,14 +42,14 @@ function Index() {
       <section className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:py-20">
         <div>
           <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
-            Delivering in {brand.city}
+            Now delivering
           </span>
           <h1 className="mt-6 font-display text-5xl leading-[1.05] font-extrabold text-balance lg:text-7xl">
             Hot food, <span className="text-primary">slid to your door.</span>
           </h1>
           <p className="mt-5 max-w-md text-lg leading-relaxed text-muted-foreground">
-            240+ kitchens, live order tracking to the minute, and coupons that actually apply at
-            checkout.
+            Freshly cooked in our own kitchen, live order tracking to the minute, and coupons that
+            actually apply at checkout.
           </p>
 
           <form

@@ -107,6 +107,7 @@ export const saveDish = createServerFn({ method: "POST" })
       category: data.category,
       recommended: data.recommended,
       available: data.available,
+      ...(data.image_url !== undefined ? { image_url: data.image_url } : {}),
     };
     const query = data.id
       ? context.supabase.from("dishes").update(payload).eq("id", data.id)

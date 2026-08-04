@@ -41,7 +41,7 @@ export function SplashIntro() {
 
       <div className="relative px-6 text-center">
         <p className="splash-kicker text-xs font-semibold uppercase tracking-[0.6em] opacity-0">
-          Est. Bengaluru
+          Our own kitchen
         </p>
         <h1 className="splash-title mt-4 font-display text-[clamp(2.75rem,12vw,8rem)] font-extrabold leading-[0.95] tracking-tight">
           <span className="splash-word inline-block">SLIDER</span>{" "}

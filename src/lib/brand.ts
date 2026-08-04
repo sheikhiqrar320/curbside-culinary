@@ -8,12 +8,10 @@ export const brand = {
   tagline: "Hot food, slid to your door.",
   supportEmail: "support@slider.food",
   supportPhone: "+91 80 4567 8900",
-  address: "4th Block, Koramangala, Bengaluru 560034",
   currency: "₹",
   deliveryFee: 39,
   freeDeliveryAbove: 599,
   taxRate: 0.05,
-  city: "Bengaluru",
 } as const;
 
 export const formatMoney = (amount: number) =>

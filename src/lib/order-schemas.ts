@@ -28,18 +28,18 @@ export const orderCodeSchema = z.object({ code: z.string().trim().min(4).max(32)
 
 /** Customer-facing wording for each backend order status. */
 export const CUSTOMER_STATUS_LABEL: Record<string, string> = {
-  received: "Waiting for admin approval",
-  accepted: "Confirmed by admin",
+  received: "Order placed",
+  accepted: "Order confirmed",
   preparing: "Preparing your food",
   out_for_delivery: "Out for delivery",
   delivered: "Delivered",
-  cancelled: "Rejected / cancelled",
+  cancelled: "Order cancelled",
 };
 
 /** Timeline steps shown to the customer, mapped from the backend status. */
 export const CUSTOMER_STAGES = [
   "Order placed",
-  "Admin approved",
+  "Confirmed",
   "Preparing",
   "Out for delivery",
   "Delivered",

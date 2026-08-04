@@ -17,7 +17,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/admin/stat-card";
-import { ApprovalsPanel } from "@/components/admin/approvals-panel";
 import { MenuPanel } from "@/components/admin/menu-panel";
 import { OrdersPanel } from "@/components/admin/orders-panel";
 import { AnalyticsPanel } from "@/components/admin/analytics-panel";
@@ -27,14 +26,12 @@ import { useAdminRealtime } from "@/hooks/use-admin-realtime";
 import { formatMoney } from "@/lib/brand";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  decideRestaurant,
   deleteDish,
   getAdminOverview,
   resetDashboard,
   saveDish,
   setDishAvailability,
   setOrderStatus,
-  setRestaurantFeatured,
 } from "@/lib/admin.functions";
 import type { DishInput, OrderStatusValue } from "@/lib/admin-schemas";
 
@@ -73,16 +70,6 @@ function AdminPage() {
   const onError = (e: unknown) =>
     toast.error(e instanceof Error ? e.message : "That action failed");
 
-  const decide = useMutation({
-    mutationFn: useServerFn(decideRestaurant),
-    onSuccess: () => { toast.success("Restaurant updated"); invalidate(); },
-    onError,
-  });
-  const feature = useMutation({
-    mutationFn: useServerFn(setRestaurantFeatured),
-    onSuccess: () => { toast.success("Updated"); invalidate(); },
-    onError,
-  });
   const dishSave = useMutation({
     mutationFn: useServerFn(saveDish),
     onSuccess: () => { toast.success("Menu saved"); invalidate(); },
@@ -113,8 +100,6 @@ function AdminPage() {
   });
 
   const busy =
-    decide.isPending ||
-    feature.isPending ||
     dishSave.isPending ||
     dishToggle.isPending ||
     dishRemove.isPending ||
@@ -159,7 +144,6 @@ function AdminPage() {
   const live = orders.filter(
     (o) => !["delivered", "cancelled"].includes(o.status),
   ).length;
-  const pending = restaurants.filter((r) => r.status === "pending").length;
   const awaiting = orders.filter((o) => o.status === "received").length;
 
   return (
@@ -178,7 +162,7 @@ function AdminPage() {
               Control room
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Approvals, menus, live orders and revenue in one place.
+              Menus, live customer orders and revenue in one place.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -214,19 +198,17 @@ function AdminPage() {
         </div>
       </div>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard accent label="Revenue" value={formatMoney(revenue)} hint={`${paid.length} paid orders`} icon={IndianRupee} />
-        <StatCard label="Awaiting approval" value={String(awaiting)} hint="Confirm to start the kitchen" icon={Clock} />
+        <StatCard label="New orders" value={String(awaiting)} hint="Confirm to start the kitchen" icon={Clock} />
         <StatCard label="Live orders" value={String(live)} hint="Not yet delivered" icon={ShoppingBag} />
         <StatCard label="Restaurants" value={String(restaurants.length)} hint={`${restaurants.filter((r) => r.status === "approved").length} approved`} icon={Store} />
-        <StatCard label="Pending approvals" value={String(pending)} hint="Waiting on you" icon={Clock} />
       </div>
 
       <Tabs defaultValue="live" className="mt-8">
         <TabsList className="flex-wrap">
           <TabsTrigger value="live">Live</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="approvals">Approvals</TabsTrigger>
           <TabsTrigger value="menu">Food</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="media">Images</TabsTrigger>
@@ -244,15 +226,6 @@ function AdminPage() {
 
         <TabsContent value="analytics" className="mt-6">
           <AnalyticsPanel orders={orders} restaurants={restaurants} />
-        </TabsContent>
-
-        <TabsContent value="approvals" className="mt-6">
-          <ApprovalsPanel
-            restaurants={restaurants}
-            busy={busy}
-            onDecide={(id, status, reason) => decide.mutate({ data: { id, status, reason } })}
-            onFeature={(id, featured) => feature.mutate({ data: { id, featured } })}
-          />
         </TabsContent>
 
         <TabsContent value="menu" className="mt-6">

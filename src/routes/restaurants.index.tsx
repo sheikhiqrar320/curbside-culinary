@@ -17,12 +17,12 @@ export const Route = createFileRoute("/restaurants/")({
       {
         name: "description",
         content:
-          "Search and filter Bengaluru restaurants by cuisine, rating, delivery time and veg-only. Add dishes straight to your cart.",
+          "Search and filter our menu by cuisine, rating, delivery time and veg-only. Add dishes straight to your cart.",
       },
       { property: "og:title", content: "Browse restaurants & dishes | Slider" },
       {
         property: "og:description",
-        content: "Search and filter Bengaluru restaurants by cuisine, rating and delivery time.",
+        content: "Search and filter our menu by cuisine, rating and delivery time.",
       },
     ],
   }),

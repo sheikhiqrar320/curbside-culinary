@@ -1,10 +1,12 @@
-import { useState } from "react";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { useRef, useState } from "react";
+import { Plus, Trash2, Pencil, ImagePlus } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { uploadImage } from "@/lib/media";
 import {
   Select,
   SelectContent,
@@ -25,6 +27,7 @@ type Draft = {
   category: string;
   recommended: boolean;
   available: boolean;
+  image_url: string | null;
 };
 
 const emptyDraft = (restaurantId: string): Draft => ({
@@ -36,6 +39,7 @@ const emptyDraft = (restaurantId: string): Draft => ({
   category: "Mains",
   recommended: false,
   available: true,
+  image_url: null,
 });
 
 export function MenuPanel({
@@ -55,9 +59,26 @@ export function MenuPanel({
 }) {
   const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const list = dishes.filter((d) => d.restaurant_id === restaurantId);
   const current = draft ?? null;
+
+  async function pickImage(file?: File) {
+    if (!file || !current) return;
+    setUploading(true);
+    try {
+      const { url } = await uploadImage(file);
+      setDraft({ ...current, image_url: url });
+      toast.success("Photo attached");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -74,6 +95,7 @@ export function MenuPanel({
       category: current.category.trim() || "Mains",
       recommended: current.recommended,
       available: current.available,
+      image_url: current.image_url,
     });
     setDraft(null);
   }
@@ -146,6 +168,47 @@ export function MenuPanel({
               onChange={(e) => setDraft({ ...current, category: e.target.value })}
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="d-img">Item photo</Label>
+            <div className="flex items-center gap-3">
+              {current.image_url ? (
+                <img
+                  src={current.image_url}
+                  alt="Item preview"
+                  className="size-16 rounded-xl border border-border object-cover"
+                />
+              ) : (
+                <span className="grid size-16 place-items-center rounded-xl border border-dashed border-border text-muted-foreground">
+                  <ImagePlus className="size-5" />
+                </span>
+              )}
+              <input
+                id="d-img"
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => void pickImage(e.target.files?.[0])}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                disabled={uploading}
+                onClick={() => fileRef.current?.click()}
+              >
+                {uploading ? "Uploading…" : current.image_url ? "Change photo" : "Upload photo"}
+              </Button>
+              {current.image_url && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setDraft({ ...current, image_url: null })}
+                >
+                  Remove
+                </Button>
+              )}
+            </div>
+          </div>
           <div className="flex flex-wrap items-center gap-6 pt-6">
             <label className="flex items-center gap-2 text-sm">
               <Switch
@@ -183,12 +246,22 @@ export function MenuPanel({
       <ul className="space-y-2">
         {list.map((d) => (
           <li key={d.id} className="card-surface flex flex-wrap items-center justify-between gap-3 p-4">
-            <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-3">
+              {d.image_url && (
+                <img
+                  src={d.image_url}
+                  alt={d.name}
+                  loading="lazy"
+                  className="size-12 shrink-0 rounded-lg object-cover"
+                />
+              )}
+              <div className="min-w-0">
               <p className="font-semibold">
                 {d.name}{" "}
                 <span className="text-xs font-normal text-muted-foreground">· {d.category}</span>
               </p>
               <p className="truncate text-sm text-muted-foreground">{d.description}</p>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <span className="font-semibold">{formatMoney(d.price)}</span>
@@ -214,6 +287,7 @@ export function MenuPanel({
                     category: d.category,
                     recommended: d.recommended,
                     available: d.available,
+                    image_url: d.image_url,
                   })
                 }
               >
