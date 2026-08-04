@@ -74,21 +74,21 @@ function TrackOrderPage() {
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <p className="text-sm text-muted-foreground">Order {order.id}</p>
       <h1 className="mt-1 font-display text-3xl font-bold">
-        {CUSTOMER_STATUS_LABEL[status] ?? "Waiting for admin approval"}
+        {CUSTOMER_STATUS_LABEL[status] ?? "Order placed"}
       </h1>
 
       {status === "received" && (
         <div className="mt-4 flex items-start gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4 text-sm">
           <Clock className="mt-0.5 size-4 shrink-0 animate-pulse text-primary" />
           <p>
-            Your order is <span className="font-semibold">not confirmed yet</span>. The kitchen starts
-            only after an admin approves it — this page updates by itself.
+            Thanks! We've got your order and the restaurant is confirming it now — this page updates
+            by itself.
           </p>
         </div>
       )}
       {cancelled && (
         <div className="mt-4 rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          This order was rejected or cancelled by the admin. You will not be charged.
+          This order was cancelled. You will not be charged.
         </div>
       )}
 
