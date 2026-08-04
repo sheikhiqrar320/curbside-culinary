@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { MapPin, Search, ShoppingBag, UtensilsCrossed } from "lucide-react";
+import { Search, ShoppingBag, UtensilsCrossed } from "lucide-react";
 import { brand } from "@/lib/brand";
 import { useCart } from "@/lib/cart";
 import { ThemeToggle } from "./theme-toggle";
