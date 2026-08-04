@@ -85,12 +85,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Slider — Food Delivery" },
       {
         name: "description",
-        content: "Order from Bengaluru's best kitchens with live order tracking, offers and UPI, card or cash payments.",
+        content: "Order hot food from our kitchen with live order tracking, offers and cash on delivery.",
       },
       { property: "og:title", content: "Slider — Food Delivery" },
       {
         property: "og:description",
-        content: "Order from Bengaluru's best kitchens with live order tracking and instant offers.",
+        content: "Order hot food with live order tracking and instant offers.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
