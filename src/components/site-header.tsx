@@ -17,10 +17,6 @@ export function SiteHeader() {
             </span>
             <span className="font-display text-xl font-bold tracking-tight">{brand.name}</span>
           </Link>
-          <span className="hidden min-w-0 items-center gap-1.5 text-sm text-muted-foreground md:flex">
-            <MapPin className="size-4 shrink-0 text-primary" />
-            <span className="truncate">Koramangala, {brand.city}</span>
-          </span>
         </div>
 
         <nav className="flex items-center gap-2 sm:gap-3">
