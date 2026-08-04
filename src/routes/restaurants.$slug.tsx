@@ -1,8 +1,10 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { Clock, Heart, Star } from "lucide-react";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { DishCard } from "@/components/dish-card";
 import { brand } from "@/lib/brand";
+import { supabase } from "@/integrations/supabase/client";
 import { dishesFor, getRestaurant, type Dish, type Restaurant } from "@/lib/catalog";
 
 export const Route = createFileRoute("/restaurants/$slug")({
@@ -30,7 +32,49 @@ export const Route = createFileRoute("/restaurants/$slug")({
 });
 
 function RestaurantPage() {
-  const { restaurant, menu } = Route.useLoaderData() as { restaurant: Restaurant; menu: Dish[] };
+  const { restaurant, menu: staticMenu } = Route.useLoaderData() as {
+    restaurant: Restaurant;
+    menu: Dish[];
+  };
+
+  // Dishes the admin adds from the dashboard live in the database, so merge them in.
+  const liveDishes = useQuery({
+    queryKey: ["menu", restaurant.slug],
+    queryFn: async (): Promise<Dish[]> => {
+      const { data: row } = await supabase
+        .from("restaurants")
+        .select("id")
+        .eq("slug", restaurant.slug)
+        .maybeSingle();
+      if (!row) return [];
+      const { data } = await supabase
+        .from("dishes")
+        .select("*")
+        .eq("restaurant_id", row.id)
+        .order("created_at", { ascending: false });
+      return (data ?? []).map((d) => ({
+        id: d.id,
+        name: d.name,
+        description: d.description,
+        price: d.price,
+        veg: d.veg,
+        category: d.category,
+        recommended: d.recommended,
+        available: d.available,
+        restaurantId: restaurant.id,
+        image: d.image_url || restaurant.image,
+      }));
+    },
+    staleTime: 30_000,
+  });
+
+  const menu: Dish[] = [
+    ...(liveDishes.data ?? []),
+    ...staticMenu.filter(
+      (s) => !(liveDishes.data ?? []).some((d) => d.name.toLowerCase() === s.name.toLowerCase()),
+    ),
+  ];
+
   const [favorite, setFavorite] = useState(false);
   const categoriesInMenu = Array.from(new Set(menu.map((d) => d.category)));
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
