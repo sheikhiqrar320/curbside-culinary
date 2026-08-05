@@ -3,8 +3,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   dishInputSchema,
   dishStatusSchema,
+  dishVisibilitySchema,
   featuredSchema,
   idSchema,
+  orderNotesSchema,
   orderStatusInputSchema,
   restaurantDecisionSchema,
   type AdminOrder,
@@ -34,10 +36,11 @@ export const getAdminOverview = createServerFn({ method: "GET" })
     await assertAdmin(context);
     const { supabase } = context;
 
-    const [restaurants, dishes, orders] = await Promise.all([
+    const [restaurants, dishes, orders, customers] = await Promise.all([
       supabase.from("restaurants").select("*").order("created_at", { ascending: false }),
       supabase.from("dishes").select("*").order("created_at", { ascending: false }),
       supabase.from("orders").select("*").order("placed_at", { ascending: false }).limit(200),
+      supabase.from("profiles").select("id", { count: "exact", head: true }),
     ]);
 
     if (restaurants.error) throw new Error(restaurants.error.message);
@@ -47,6 +50,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
     return {
       restaurants: restaurants.data ?? [],
       dishes: dishes.data ?? [],
+      customers: customers.count ?? 0,
       orders: (orders.data ?? []).map((o: Record<string, unknown>) => ({
         ...o,
         items: Array.isArray(o.items) ? o.items : [],
@@ -103,6 +107,9 @@ export const saveDish = createServerFn({ method: "POST" })
       name: data.name,
       description: data.description,
       price: data.price,
+      discount: data.discount,
+      stock: data.stock,
+      visible: data.visible,
       veg: data.veg,
       category: data.category,
       recommended: data.recommended,
@@ -125,6 +132,34 @@ export const setDishAvailability = createServerFn({ method: "POST" })
     const { error } = await context.supabase
       .from("dishes")
       .update({ available: data.available })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Hides or shows a product in the customer storefront. */
+export const setDishVisibility = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => dishVisibilitySchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { error } = await context.supabase
+      .from("dishes")
+      .update({ visible: data.visible })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Saves a delivery note against an order. */
+export const setOrderNotes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => orderNotesSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { error } = await context.supabase
+      .from("orders")
+      .update({ admin_notes: data.notes || null })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

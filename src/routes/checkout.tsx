@@ -22,16 +22,16 @@ export const Route = createFileRoute("/checkout")({
 
 const PAYMENT_METHODS = [{ id: "cod", label: "Cash on delivery" }];
 
-const SAVED_ADDRESSES: { id: string; label: string; value: string }[] = [];
-
 function CheckoutPage() {
   const cart = useCart();
   const navigate = useNavigate();
   const submitOrder = useServerFn(placeOrder);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [addressId, setAddressId] = useState(SAVED_ADDRESSES[0].id);
-  const [customAddress, setCustomAddress] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [landmark, setLandmark] = useState("");
+  const [pincode, setPincode] = useState("");
   const [payment, setPayment] = useState("cod");
   const [placing, setPlacing] = useState(false);
 
@@ -49,17 +49,15 @@ function CheckoutPage() {
     );
   }
 
-  const address =
-    addressId === "new"
-      ? customAddress
-      : (SAVED_ADDRESSES.find((a) => a.id === addressId)?.value ?? "");
-
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim().length < 2) return toast.error("Please enter your name.");
     if (!/^[0-9]{10}$/.test(phone.replace(/\D/g, "").slice(-10)))
       return toast.error("Enter a valid 10-digit phone number.");
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
+      return toast.error("Enter a valid email address.");
     if (address.trim().length < 10) return toast.error("Please enter a delivery address.");
+    if (!/^[0-9]{4,10}$/.test(pincode.trim())) return toast.error("Enter a valid pincode.");
 
     setPlacing(true);
     const order = {
@@ -87,7 +85,10 @@ function CheckoutPage() {
           restaurant_slug: slug,
           customer_name: order.name,
           phone: order.phone,
+          email: email.trim(),
           address: order.address,
+          landmark: landmark.trim(),
+          pincode: pincode.trim(),
           items: order.items,
           subtotal: Math.round(order.subtotal),
           discount: Math.round(order.discount),
@@ -117,38 +118,28 @@ function CheckoutPage() {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Field label="Full name" value={name} onChange={setName} placeholder="Ananya Mehta" />
             <Field label="Phone number" value={phone} onChange={setPhone} placeholder="98450 12345" />
+            <Field label="Email address" value={email} onChange={setEmail} placeholder="you@email.com" />
           </div>
         </section>
 
         <section className="card-surface p-6">
           <h2 className="font-display text-lg font-bold">Delivery address</h2>
-          <div className="mt-4 space-y-3">
-            {SAVED_ADDRESSES.map((a) => (
-              <Choice
-                key={a.id}
-                name="address"
-                checked={addressId === a.id}
-                onChange={() => setAddressId(a.id)}
-                title={a.label}
-                subtitle={a.value}
-              />
-            ))}
-            <Choice
-              name="address"
-              checked={addressId === "new"}
-              onChange={() => setAddressId("new")}
-              title="Add a new address"
-            />
-            {addressId === "new" && (
+          <div className="mt-4 space-y-4">
+            <label className="block text-sm">
+              <span className="font-medium">Full address</span>
               <textarea
-                value={customAddress}
-                onChange={(e) => setCustomAddress(e.target.value)}
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
                 rows={3}
-                aria-label="New delivery address"
-                placeholder="Flat, building, street, landmark, pincode"
-                className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
+                maxLength={300}
+                placeholder="Flat, building, street, area"
+                className="mt-1.5 w-full rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
               />
-            )}
+            </label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Landmark" value={landmark} onChange={setLandmark} placeholder="Near the park" />
+              <Field label="Pincode" value={pincode} onChange={setPincode} placeholder="560001" />
+            </div>
           </div>
         </section>
 

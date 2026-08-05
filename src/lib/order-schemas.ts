@@ -5,7 +5,10 @@ export const placeOrderSchema = z.object({
   restaurant_slug: z.string().trim().max(120).optional(),
   customer_name: z.string().trim().min(2).max(80),
   phone: z.string().trim().min(6).max(20),
+  email: z.string().trim().email().max(255).optional().or(z.literal("")),
   address: z.string().trim().min(10).max(300),
+  landmark: z.string().trim().max(120).optional().or(z.literal("")),
+  pincode: z.string().trim().regex(/^[0-9]{4,10}$/, "Enter a valid pincode"),
   items: z
     .array(
       z.object({
