@@ -33,12 +33,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
-      const saved = JSON.parse(raw) as { lines: { id: string; qty: number }[]; coupon: string | null };
+      const saved = JSON.parse(raw) as {
+        lines: { id: string; qty: number; dish?: Dish }[];
+        coupon: string | null;
+      };
       setLines(
         saved.lines
-          .map(({ id, qty }) => {
-            const dish = dishes.find((d) => d.id === id);
-            return dish ? { dish, qty } : null;
+          .map(({ id, qty, dish }) => {
+            // Products added by the admin live in the database, so the whole
+            // dish is persisted; fall back to the built-in catalog for old carts.
+            const resolved = dish ?? dishes.find((d) => d.id === id);
+            return resolved ? { dish: resolved, qty } : null;
           })
           .filter(Boolean) as CartLine[],
       );
@@ -51,7 +56,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ lines: lines.map((l) => ({ id: l.dish.id, qty: l.qty })), coupon }),
+      JSON.stringify({
+        lines: lines.map((l) => ({ id: l.dish.id, qty: l.qty, dish: l.dish })),
+        coupon,
+      }),
     );
   }, [lines, coupon]);
 

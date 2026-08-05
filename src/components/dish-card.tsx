@@ -9,6 +9,9 @@ export function DishCard({ dish }: { dish: Dish }) {
   const { lines, add, setQty } = useCart();
   const qty = lines.find((l) => l.dish.id === dish.id)?.qty ?? 0;
   const soldOut = dish.available === false;
+  const mrp = (dish as Dish & { mrp?: number }).mrp;
+  const discount = (dish as Dish & { discount?: number }).discount ?? 0;
+  const stock = (dish as Dish & { stock?: number }).stock;
 
   return (
     <article className="card-surface flex gap-4 p-4">
@@ -22,8 +25,23 @@ export function DishCard({ dish }: { dish: Dish }) {
           )}
         </div>
         <h3 className="mt-1.5 font-display text-base font-semibold">{dish.name}</h3>
-        <p className="mt-1 font-semibold text-primary">{formatMoney(dish.price)}</p>
+        <p className="mt-1 flex flex-wrap items-center gap-2 font-semibold text-primary">
+          {formatMoney(dish.price)}
+          {discount > 0 && mrp && mrp > dish.price && (
+            <>
+              <span className="text-xs font-normal text-muted-foreground line-through">
+                {formatMoney(mrp)}
+              </span>
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+                {discount}% off
+              </span>
+            </>
+          )}
+        </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{dish.description}</p>
+        {typeof stock === "number" && !soldOut && stock <= 10 && (
+          <p className="mt-1 text-xs font-semibold text-destructive">Only {stock} left</p>
+        )}
       </div>
 
       <div className="flex w-28 shrink-0 flex-col items-center gap-2">

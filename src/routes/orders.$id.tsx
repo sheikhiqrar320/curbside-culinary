@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Check, Clock, Printer } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -40,6 +40,19 @@ function TrackOrderPage() {
     refetchInterval: 5000,
     retry: false,
   });
+
+  // Notify the customer whenever the admin moves the order to a new stage.
+  const seen = useRef<string | null>(null);
+  const liveStatus = live.data?.status;
+  useEffect(() => {
+    if (!liveStatus) return;
+    if (seen.current && seen.current !== liveStatus) {
+      const label = CUSTOMER_STATUS_LABEL[liveStatus] ?? liveStatus;
+      if (liveStatus === "cancelled") toast.error(`Your order was cancelled`);
+      else toast.success(`Order update: ${label}`);
+    }
+    seen.current = liveStatus;
+  }, [liveStatus]);
 
   if (order === undefined) {
     return <div className="mx-auto my-16 h-64 max-w-3xl animate-pulse rounded-2xl bg-muted" />;

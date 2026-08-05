@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ShieldAlert, IndianRupee, ShoppingBag, Store, Clock, RotateCcw } from "lucide-react";
+import { ShieldAlert, IndianRupee, ShoppingBag, Clock, RotateCcw, Package, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -31,6 +31,8 @@ import {
   resetDashboard,
   saveDish,
   setDishAvailability,
+  setDishVisibility,
+  setOrderNotes,
   setOrderStatus,
 } from "@/lib/admin.functions";
 import type { DishInput, OrderStatusValue } from "@/lib/admin-schemas";
@@ -80,6 +82,16 @@ function AdminPage() {
     onSuccess: invalidate,
     onError,
   });
+  const dishVisible = useMutation({
+    mutationFn: useServerFn(setDishVisibility),
+    onSuccess: invalidate,
+    onError,
+  });
+  const orderNotes = useMutation({
+    mutationFn: useServerFn(setOrderNotes),
+    onSuccess: () => { toast.success("Delivery note saved"); invalidate(); },
+    onError,
+  });
   const dishRemove = useMutation({
     mutationFn: useServerFn(deleteDish),
     onSuccess: () => { toast.success("Dish removed"); invalidate(); },
@@ -102,6 +114,8 @@ function AdminPage() {
   const busy =
     dishSave.isPending ||
     dishToggle.isPending ||
+    dishVisible.isPending ||
+    orderNotes.isPending ||
     dishRemove.isPending ||
     orderStatus.isPending ||
     reset.isPending;
@@ -138,7 +152,7 @@ function AdminPage() {
     );
   }
 
-  const { restaurants, dishes, orders } = overview.data!;
+  const { restaurants, dishes, orders, customers } = overview.data!;
   const paid = orders.filter((o) => o.status !== "cancelled");
   const revenue = paid.reduce((s, o) => s + o.total, 0);
   const live = orders.filter(
@@ -198,11 +212,12 @@ function AdminPage() {
         </div>
       </div>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard accent label="Revenue" value={formatMoney(revenue)} hint={`${paid.length} paid orders`} icon={IndianRupee} />
-        <StatCard label="New orders" value={String(awaiting)} hint="Confirm to start the kitchen" icon={Clock} />
-        <StatCard label="Live orders" value={String(live)} hint="Not yet delivered" icon={ShoppingBag} />
-        <StatCard label="Restaurants" value={String(restaurants.length)} hint={`${restaurants.filter((r) => r.status === "approved").length} approved`} icon={Store} />
+        <StatCard label="Total orders" value={String(orders.length)} hint={`${live} live right now`} icon={ShoppingBag} />
+        <StatCard label="Pending orders" value={String(awaiting)} hint="Accept to start the kitchen" icon={Clock} />
+        <StatCard label="Products" value={String(dishes.length)} hint={`${dishes.filter((d) => d.visible).length} visible to customers`} icon={Package} />
+        <StatCard label="Customers" value={String(customers)} hint="Registered accounts" icon={Users} />
       </div>
 
       <Tabs defaultValue="live" className="mt-8">
@@ -235,6 +250,7 @@ function AdminPage() {
             busy={busy}
             onSave={(input: DishInput) => dishSave.mutate({ data: input })}
             onToggle={(id, available) => dishToggle.mutate({ data: { id, available } })}
+            onVisibility={(id, visible) => dishVisible.mutate({ data: { id, visible } })}
             onDelete={(id) => dishRemove.mutate({ data: { id } })}
           />
         </TabsContent>
@@ -245,6 +261,7 @@ function AdminPage() {
             restaurants={restaurants}
             busy={busy}
             onStatus={(id, status: OrderStatusValue) => orderStatus.mutate({ data: { id, status } })}
+            onNotes={(id, notes) => orderNotes.mutate({ data: { id, notes } })}
           />
         </TabsContent>
 

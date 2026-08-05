@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, X } from "lucide-react";
+import { Check, X, ChevronDown } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/brand";
@@ -32,15 +33,19 @@ export function OrdersPanel({
   orders,
   restaurants,
   onStatus,
+  onNotes,
   busy,
 }: {
   orders: AdminOrder[];
   restaurants: AdminRestaurant[];
   onStatus: (id: string, status: OrderStatusValue) => void;
+  onNotes: (id: string, notes: string) => void;
   busy: boolean;
 }) {
   const [filter, setFilter] = useState<"all" | OrderStatusValue>("all");
   const [q, setQ] = useState("");
+  const [open, setOpen] = useState<string | null>(null);
+  const [noteDraft, setNoteDraft] = useState("");
   const nameOf = (id: string | null) => restaurants.find((r) => r.id === id)?.name ?? "—";
   const pending = orders.filter((o) => o.status === "received").length;
 
@@ -49,7 +54,8 @@ export function OrdersPanel({
       (filter === "all" || o.status === filter) &&
       (q.trim() === "" ||
         o.code.toLowerCase().includes(q.toLowerCase()) ||
-        o.customer_name.toLowerCase().includes(q.toLowerCase())),
+        o.customer_name.toLowerCase().includes(q.toLowerCase()) ||
+        o.phone.includes(q.trim())),
   );
 
   return (
@@ -138,8 +144,76 @@ export function OrdersPanel({
                     ))}
                   </SelectContent>
                 </Select>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setOpen(open === o.id ? null : o.id);
+                    setNoteDraft(o.admin_notes ?? "");
+                  }}
+                >
+                  <ChevronDown className="size-4" /> Details
+                </Button>
               </div>
             </div>
+
+            {open === o.id && (
+              <div className="mt-4 grid gap-4 border-t border-border pt-4 text-sm sm:grid-cols-2">
+                <dl className="space-y-1">
+                  <Row label="Order ID" value={o.code} />
+                  <Row label="Placed" value={new Date(o.placed_at).toLocaleString()} />
+                  <Row label="Customer" value={o.customer_name} />
+                  <Row label="Phone" value={o.phone} />
+                  <Row label="Email" value={o.email ?? "—"} />
+                  <Row label="Address" value={o.address} />
+                  <Row label="Landmark" value={o.landmark ?? "—"} />
+                  <Row label="Pincode" value={o.pincode ?? "—"} />
+                  <Row label="Payment" value={o.payment_method.toUpperCase()} />
+                  <Row label="Status" value={ORDER_STATUS_LABEL[o.status]} />
+                </dl>
+                <div>
+                  <p className="font-semibold">Items</p>
+                  <ul className="mt-1 space-y-1">
+                    {o.items.map((i, idx) => (
+                      <li key={idx} className="flex justify-between gap-3 text-muted-foreground">
+                        <span className="min-w-0 truncate">
+                          {i.qty} × {i.name}
+                        </span>
+                        <span>{formatMoney(i.price * i.qty)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-2 space-y-1 border-t border-border pt-2 text-muted-foreground">
+                    <p className="flex justify-between"><span>Subtotal</span><span>{formatMoney(o.subtotal)}</span></p>
+                    {o.discount > 0 && (
+                      <p className="flex justify-between"><span>Discount</span><span>− {formatMoney(o.discount)}</span></p>
+                    )}
+                    <p className="flex justify-between"><span>Delivery</span><span>{formatMoney(o.delivery_fee)}</span></p>
+                    <p className="flex justify-between"><span>Taxes</span><span>{formatMoney(o.tax)}</span></p>
+                    <p className="flex justify-between font-semibold text-foreground">
+                      <span>Total</span>
+                      <span>{formatMoney(o.total)}</span>
+                    </p>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <label className="text-xs font-semibold" htmlFor={`note-${o.id}`}>
+                      Delivery note
+                    </label>
+                    <Textarea
+                      id={`note-${o.id}`}
+                      rows={2}
+                      maxLength={500}
+                      value={noteDraft}
+                      onChange={(e) => setNoteDraft(e.target.value)}
+                      placeholder="Ring the bell twice, call on arrival…"
+                    />
+                    <Button size="sm" disabled={busy} onClick={() => onNotes(o.id, noteDraft.trim())}>
+                      Save note
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </li>
         ))}
         {list.length === 0 && (
@@ -148,6 +222,15 @@ export function OrdersPanel({
           </li>
         )}
       </ul>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-2">
+      <dt className="w-24 shrink-0 text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 break-words font-medium">{value}</dd>
     </div>
   );
 }

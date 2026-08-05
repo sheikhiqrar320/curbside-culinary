@@ -47,6 +47,9 @@ export const dishInputSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
   description: z.string().trim().max(400).default(""),
   price: z.number().int().min(0).max(100000),
+  discount: z.number().int().min(0).max(90).default(0),
+  stock: z.number().int().min(0).max(100000).default(0),
+  visible: z.boolean().default(true),
   veg: z.boolean().default(false),
   category: z.string().trim().min(1).max(60).default("Mains"),
   recommended: z.boolean().default(false),
@@ -58,6 +61,16 @@ export type DishInput = z.infer<typeof dishInputSchema>;
 export const orderStatusInputSchema = z.object({
   id: z.string().uuid(),
   status: z.enum(ORDER_STATUSES),
+});
+
+export const dishVisibilitySchema = z.object({
+  id: z.string().uuid(),
+  visible: z.boolean(),
+});
+
+export const orderNotesSchema = z.object({
+  id: z.string().uuid(),
+  notes: z.string().trim().max(500),
 });
 
 export type AdminRestaurant = {
@@ -87,6 +100,9 @@ export type AdminDish = {
   name: string;
   description: string;
   price: number;
+  discount: number;
+  stock: number;
+  visible: boolean;
   veg: boolean;
   category: string;
   recommended: boolean;
@@ -101,7 +117,11 @@ export type AdminOrder = {
   restaurant_id: string | null;
   customer_name: string;
   phone: string;
+  email: string | null;
   address: string;
+  landmark: string | null;
+  pincode: string | null;
+  admin_notes: string | null;
   payment_method: string;
   items: { name: string; qty: number; price: number }[];
   subtotal: number;
@@ -117,4 +137,5 @@ export type AdminOverview = {
   restaurants: AdminRestaurant[];
   dishes: AdminDish[];
   orders: AdminOrder[];
+  customers: number;
 };

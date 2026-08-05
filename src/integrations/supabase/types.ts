@@ -20,39 +20,48 @@ export type Database = {
           category: string
           created_at: string
           description: string
+          discount: number
           id: string
           image_url: string | null
           name: string
           price: number
           recommended: boolean
           restaurant_id: string
+          stock: number
           veg: boolean
+          visible: boolean
         }
         Insert: {
           available?: boolean
           category?: string
           created_at?: string
           description?: string
+          discount?: number
           id?: string
           image_url?: string | null
           name: string
           price: number
           recommended?: boolean
           restaurant_id: string
+          stock?: number
           veg?: boolean
+          visible?: boolean
         }
         Update: {
           available?: boolean
           category?: string
           created_at?: string
           description?: string
+          discount?: number
           id?: string
           image_url?: string | null
           name?: string
           price?: number
           recommended?: boolean
           restaurant_id?: string
+          stock?: number
           veg?: boolean
+          visible?: boolean
         }
         Relationships: [
           {
@@ -106,14 +115,18 @@ export type Database = {
       orders: {
         Row: {
           address: string
+          admin_notes: string | null
           code: string
           customer_name: string
           delivery_fee: number
           discount: number
+          email: string | null
           id: string
           items: Json
+          landmark: string | null
           payment_method: string
           phone: string
+          pincode: string | null
           placed_at: string
           restaurant_id: string | null
           status: Database["public"]["Enums"]["order_status"]
@@ -125,14 +138,18 @@ export type Database = {
         }
         Insert: {
           address: string
+          admin_notes?: string | null
           code: string
           customer_name: string
           delivery_fee?: number
           discount?: number
+          email?: string | null
           id?: string
           items?: Json
+          landmark?: string | null
           payment_method?: string
           phone: string
+          pincode?: string | null
           placed_at?: string
           restaurant_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -144,14 +161,18 @@ export type Database = {
         }
         Update: {
           address?: string
+          admin_notes?: string | null
           code?: string
           customer_name?: string
           delivery_fee?: number
           discount?: number
+          email?: string | null
           id?: string
           items?: Json
+          landmark?: string | null
           payment_method?: string
           phone?: string
+          pincode?: string | null
           placed_at?: string
           restaurant_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]

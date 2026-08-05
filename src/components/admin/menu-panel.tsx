@@ -23,6 +23,9 @@ type Draft = {
   name: string;
   description: string;
   price: string;
+  discount: string;
+  stock: string;
+  visible: boolean;
   veg: boolean;
   category: string;
   recommended: boolean;
@@ -35,6 +38,9 @@ const emptyDraft = (restaurantId: string): Draft => ({
   name: "",
   description: "",
   price: "",
+  discount: "0",
+  stock: "50",
+  visible: true,
   veg: false,
   category: "Mains",
   recommended: false,
@@ -47,6 +53,7 @@ export function MenuPanel({
   dishes,
   onSave,
   onToggle,
+  onVisibility,
   onDelete,
   busy,
 }: {
@@ -54,15 +61,25 @@ export function MenuPanel({
   dishes: AdminDish[];
   onSave: (input: DishInput) => void;
   onToggle: (id: string, available: boolean) => void;
+  onVisibility: (id: string, visible: boolean) => void;
   onDelete: (id: string) => void;
   busy: boolean;
 }) {
   const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? "");
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [q, setQ] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const list = dishes.filter((d) => d.restaurant_id === restaurantId);
+  const term = q.trim().toLowerCase();
+  const list = dishes.filter(
+    (d) =>
+      d.restaurant_id === restaurantId &&
+      (term === "" ||
+        d.name.toLowerCase().includes(term) ||
+        d.category.toLowerCase().includes(term) ||
+        d.description.toLowerCase().includes(term)),
+  );
   const current = draft ?? null;
 
   async function pickImage(file?: File) {
@@ -91,6 +108,9 @@ export function MenuPanel({
       name: current.name.trim(),
       description: current.description.trim(),
       price: Math.round(price),
+      discount: Math.min(90, Math.max(0, Math.round(Number(current.discount) || 0))),
+      stock: Math.max(0, Math.round(Number(current.stock) || 0)),
+      visible: current.visible,
       veg: current.veg,
       category: current.category.trim() || "Mains",
       recommended: current.recommended,
@@ -124,6 +144,13 @@ export function MenuPanel({
         <Button onClick={() => setDraft(emptyDraft(restaurantId))} disabled={!restaurantId || busy}>
           <Plus className="size-4" /> Add dish
         </Button>
+        <Input
+          value={q}
+          maxLength={60}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search products"
+          className="w-full max-w-xs"
+        />
       </div>
 
       {current && (
@@ -166,6 +193,28 @@ export function MenuPanel({
               value={current.category}
               maxLength={60}
               onChange={(e) => setDraft({ ...current, category: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="d-discount">Discount (%)</Label>
+            <Input
+              id="d-discount"
+              type="number"
+              min={0}
+              max={90}
+              value={current.discount}
+              onChange={(e) => setDraft({ ...current, discount: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="d-stock">Stock quantity</Label>
+            <Input
+              id="d-stock"
+              type="number"
+              min={0}
+              max={100000}
+              value={current.stock}
+              onChange={(e) => setDraft({ ...current, stock: e.target.value })}
             />
           </div>
           <div className="space-y-2">
@@ -231,6 +280,13 @@ export function MenuPanel({
               />
               Available
             </label>
+            <label className="flex items-center gap-2 text-sm">
+              <Switch
+                checked={current.visible}
+                onCheckedChange={(v) => setDraft({ ...current, visible: v })}
+              />
+              Visible to customers
+            </label>
           </div>
           <div className="flex gap-2 sm:col-span-2">
             <Button type="submit" disabled={busy}>
@@ -261,10 +317,26 @@ export function MenuPanel({
                 <span className="text-xs font-normal text-muted-foreground">· {d.category}</span>
               </p>
               <p className="truncate text-sm text-muted-foreground">{d.description}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Stock {d.stock}
+                {d.discount > 0 && <> · {d.discount}% off</>}
+                {!d.visible && <> · hidden</>}
+              </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="font-semibold">{formatMoney(d.price)}</span>
+              <span className="font-semibold">
+                {d.discount > 0 ? (
+                  <>
+                    {formatMoney(Math.round(d.price * (1 - d.discount / 100)))}{" "}
+                    <span className="text-xs font-normal text-muted-foreground line-through">
+                      {formatMoney(d.price)}
+                    </span>
+                  </>
+                ) : (
+                  formatMoney(d.price)
+                )}
+              </span>
               <label className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Switch
                   checked={d.available}
@@ -272,6 +344,14 @@ export function MenuPanel({
                   onCheckedChange={(v) => onToggle(d.id, v)}
                 />
                 {d.available ? "In stock" : "Sold out"}
+              </label>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Switch
+                  checked={d.visible}
+                  disabled={busy}
+                  onCheckedChange={(v) => onVisibility(d.id, v)}
+                />
+                {d.visible ? "Shown" : "Hidden"}
               </label>
               <Button
                 size="sm"
@@ -283,6 +363,9 @@ export function MenuPanel({
                     name: d.name,
                     description: d.description,
                     price: String(d.price),
+                    discount: String(d.discount),
+                    stock: String(d.stock),
+                    visible: d.visible,
                     veg: d.veg,
                     category: d.category,
                     recommended: d.recommended,
