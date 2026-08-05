@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Dish } from "./catalog";
+import fallbackImage from "@/assets/hero-spread.jpg";
 
 /** A product as customers see it: admin-managed row plus its computed sale price. */
 export type Product = Dish & {
@@ -41,7 +42,7 @@ export async function fetchProducts(): Promise<Product[]> {
       restaurantId: d.restaurant_id,
       restaurantSlug: place?.slug ?? "",
       restaurantName: place?.name ?? "",
-      image: d.image_url || place?.image_url || "",
+      image: d.image_url || place?.image_url || fallbackImage,
     } satisfies Product;
   });
 }
