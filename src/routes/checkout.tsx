@@ -7,6 +7,7 @@ import { useCart } from "@/lib/cart";
 import { restaurants as catalogRestaurants } from "@/lib/catalog";
 import { placeOrder } from "@/lib/orders.functions";
 import { linesToItems, newOrderId, saveOrder } from "@/lib/orders";
+import { ShopClosedNotice, useShopOpen } from "@/components/store-chrome";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -25,6 +26,7 @@ const PAYMENT_METHODS = [{ id: "cod", label: "Cash on delivery" }];
 function CheckoutPage() {
   const cart = useCart();
   const navigate = useNavigate();
+  const shopOpen = useShopOpen();
   const submitOrder = useServerFn(placeOrder);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -34,6 +36,8 @@ function CheckoutPage() {
   const [pincode, setPincode] = useState("");
   const [payment, setPayment] = useState("cod");
   const [placing, setPlacing] = useState(false);
+
+  if (!shopOpen) return <ShopClosedNotice />;
 
   if (cart.lines.length === 0) {
     return (
