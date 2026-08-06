@@ -109,8 +109,8 @@ export type AdminDish = {
   category: string;
   recommended: boolean;
   available: boolean;
-  tags: string[];
-  prep_minutes: number;
+  tags: string[] | null;
+  prep_minutes: number | null;
   image_url: string | null;
   created_at: string;
 };
