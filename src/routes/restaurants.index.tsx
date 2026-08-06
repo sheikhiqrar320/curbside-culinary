@@ -7,6 +7,7 @@ import { dishes, restaurants, restaurantById } from "@/lib/catalog";
 import { useProducts } from "@/hooks/use-products";
 import { matchesSearch } from "@/lib/products";
 import { brand } from "@/lib/brand";
+import { ShopClosedNotice, useShopOpen } from "@/components/store-chrome";
 
 type SearchParams = { q?: string };
 
@@ -49,16 +50,20 @@ function RestaurantsPage() {
   const [sort, setSort] = useState<(typeof SORTS)[number]>("Relevance");
   const [category, setCategory] = useState<string | null>(null);
   const [band, setBand] = useState<(typeof PRICE_BANDS)[number]["id"]>("all");
+  const [tag, setTag] = useState<string | null>(null);
   const products = useProducts();
+  const shopOpen = useShopOpen();
 
   const term = query.trim().toLowerCase();
   const maxPrice = PRICE_BANDS.find((b) => b.id === band)?.max ?? Infinity;
 
   const allProducts = products.data ?? [];
   const productCategories = Array.from(new Set(allProducts.map((p) => p.category))).sort();
+  const productTags = Array.from(new Set(allProducts.flatMap((p) => p.tags))).sort();
   const shownProducts = allProducts
     .filter((p) => matchesSearch(p, term))
     .filter((p) => (!category || p.category === category) && (!vegOnly || p.veg) && p.price <= maxPrice)
+    .filter((p) => !tag || p.tags.includes(tag))
     .sort((a, b) => (sort === "Cost: low to high" ? a.price - b.price : 0));
 
   let list = restaurants.filter((r) => {
@@ -93,6 +98,12 @@ function RestaurantsPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
       <h1 className="font-display text-3xl font-bold">Browse restaurants</h1>
+
+      {!shopOpen && (
+        <div className="mt-6">
+          <ShopClosedNotice />
+        </div>
+      )}
 
       <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-center">
         <div className="flex flex-1 items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
@@ -138,6 +149,9 @@ function RestaurantsPage() {
             onClick={() => setCategory(category === c ? null : c)}
             label={c}
           />
+        ))}
+        {productTags.map((t) => (
+          <FilterChip key={t} active={tag === t} onClick={() => setTag(tag === t ? null : t)} label={t} />
         ))}
       </div>
 
