@@ -17,6 +17,15 @@ export const placeOrder = createServerFn({ method: "POST" })
       restaurantId = r?.id ?? null;
     }
 
+    // Shop must be open, and the ETA comes from the admin's delivery-time setting.
+    const { data: store } = await supabaseAdmin
+      .from("store_settings")
+      .select("shop_open, eta_max")
+      .maybeSingle();
+    if (store && store.shop_open === false) {
+      throw new Error("The kitchen is closed right now — please try again later.");
+    }
+
     const { error } = await supabaseAdmin.from("orders").insert({
       code: data.code,
       restaurant_id: restaurantId,
@@ -34,6 +43,7 @@ export const placeOrder = createServerFn({ method: "POST" })
       tax: data.tax,
       total: data.total,
       status: "received",
+      eta_minutes: store?.eta_max ?? 45,
     });
     if (error) throw new Error(error.message);
     return { ok: true, code: data.code, status: "received" as const };
@@ -46,9 +56,15 @@ export const getOrderStatus = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
       .from("orders")
-      .select("code,status,updated_at")
+      .select("code,status,updated_at,eta_minutes")
       .eq("code", data.code)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return row ? { status: row.status as string, updatedAt: row.updated_at as string } : null;
+    return row
+      ? {
+          status: row.status as string,
+          updatedAt: row.updated_at as string,
+          etaMinutes: (row.eta_minutes as number | null) ?? null,
+        }
+      : null;
   });

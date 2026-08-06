@@ -22,10 +22,14 @@ import { OrdersPanel } from "@/components/admin/orders-panel";
 import { AnalyticsPanel } from "@/components/admin/analytics-panel";
 import { LiveBoard } from "@/components/admin/live-board";
 import { MediaPanel } from "@/components/admin/media-panel";
+import { SettingsPanel } from "@/components/admin/settings-panel";
 import { useAdminRealtime } from "@/hooks/use-admin-realtime";
+import { useStoreSettings } from "@/hooks/use-store-settings";
 import { formatMoney } from "@/lib/brand";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  applyDiscount,
+  deleteAllDishes,
   deleteDish,
   getAdminOverview,
   resetDashboard,
@@ -34,8 +38,11 @@ import {
   setDishVisibility,
   setOrderNotes,
   setOrderStatus,
+  saveStoreSettings,
+  updateAdminCredentials,
 } from "@/lib/admin.functions";
 import type { DishInput, OrderStatusValue } from "@/lib/admin-schemas";
+import type { StoreSettingsInput } from "@/lib/store-schemas";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -67,6 +74,7 @@ function AdminPage() {
   });
 
   useAdminRealtime(overview.isSuccess);
+  const { settings } = useStoreSettings();
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin", "overview"] });
   const onError = (e: unknown) =>
@@ -110,6 +118,32 @@ function AdminPage() {
     },
     onError,
   });
+  const storeSave = useMutation({
+    mutationFn: useServerFn(saveStoreSettings),
+    onSuccess: () => {
+      toast.success("Store settings saved");
+      queryClient.invalidateQueries({ queryKey: ["store", "settings"] });
+    },
+    onError,
+  });
+  const discountAll = useMutation({
+    mutationFn: useServerFn(applyDiscount),
+    onSuccess: () => { toast.success("Discounts updated"); invalidate(); },
+    onError,
+  });
+  const wipeMenu = useMutation({
+    mutationFn: useServerFn(deleteAllDishes),
+    onSuccess: (r: { deleted: number }) => {
+      toast.success(`${r.deleted} product${r.deleted === 1 ? "" : "s"} removed`);
+      invalidate();
+    },
+    onError,
+  });
+  const credentials = useMutation({
+    mutationFn: useServerFn(updateAdminCredentials),
+    onSuccess: () => toast.success("Admin login updated — use it next time you sign in"),
+    onError,
+  });
 
   const busy =
     dishSave.isPending ||
@@ -118,6 +152,10 @@ function AdminPage() {
     orderNotes.isPending ||
     dishRemove.isPending ||
     orderStatus.isPending ||
+    storeSave.isPending ||
+    discountAll.isPending ||
+    wipeMenu.isPending ||
+    credentials.isPending ||
     reset.isPending;
 
   async function signOut() {
@@ -227,6 +265,7 @@ function AdminPage() {
           <TabsTrigger value="menu">Food</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="media">Images</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="live" className="mt-6">
@@ -267,6 +306,17 @@ function AdminPage() {
 
         <TabsContent value="media" className="mt-6">
           <MediaPanel restaurants={restaurants} dishes={dishes} />
+        </TabsContent>
+
+        <TabsContent value="settings" className="mt-6">
+          <SettingsPanel
+            settings={settings}
+            busy={busy}
+            onSave={(input: StoreSettingsInput) => storeSave.mutate({ data: input })}
+            onDiscountAll={(discount) => discountAll.mutate({ data: { scope: "all", discount } })}
+            onDeleteAllDishes={() => wipeMenu.mutate({} as never)}
+            onCredentials={(input) => credentials.mutate({ data: input })}
+          />
         </TabsContent>
       </Tabs>
     </div>

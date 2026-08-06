@@ -7,6 +7,8 @@ export type Product = Dish & {
   mrp: number;
   discount: number;
   stock: number;
+  tags: string[];
+  prepMinutes: number;
   restaurantSlug: string;
   restaurantName: string;
 };
@@ -35,6 +37,8 @@ export async function fetchProducts(): Promise<Product[]> {
       mrp: d.price,
       discount,
       stock: d.stock ?? 0,
+      tags: d.tags ?? [],
+      prepMinutes: d.prep_minutes ?? 25,
       veg: d.veg,
       category: d.category,
       recommended: d.recommended,

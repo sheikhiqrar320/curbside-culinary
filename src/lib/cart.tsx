@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { brand } from "./brand";
 import { coupons, dishes, type Dish } from "./catalog";
+import { useStoreSettings } from "@/hooks/use-store-settings";
+import { deliveryFeeFor } from "./store";
 
 export type CartLine = { dish: Dish; qty: number };
 
@@ -28,6 +30,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Start empty so SSR and first client render match, then hydrate from storage.
   const [lines, setLines] = useState<CartLine[]>([]);
   const [coupon, setCoupon] = useState<string | null>(null);
+  const { settings } = useStoreSettings();
 
   useEffect(() => {
     try {
@@ -67,7 +70,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const subtotal = lines.reduce((sum, l) => sum + l.dish.price * l.qty, 0);
     const active = coupons.find((c) => c.code === coupon);
     let discount = 0;
-    let deliveryFee = subtotal === 0 || subtotal >= brand.freeDeliveryAbove ? 0 : brand.deliveryFee;
+    let deliveryFee = deliveryFeeFor(subtotal, settings);
 
     if (active && subtotal >= active.minOrder) {
       if (active.type === "percent") discount = Math.min((subtotal * active.value) / 100, active.cap);
@@ -76,7 +79,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     const taxable = Math.max(subtotal - discount, 0);
-    const tax = Math.round(taxable * brand.taxRate);
+    const tax = Math.round(taxable * settings.tax_rate);
 
     return {
       lines,
@@ -114,7 +117,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       },
       clearCoupon: () => setCoupon(null),
     };
-  }, [lines, coupon]);
+  }, [lines, coupon, settings]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

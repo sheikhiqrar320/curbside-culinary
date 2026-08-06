@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
+  adminCredentialsSchema,
+  bulkDiscountSchema,
+  storeSettingsSchema,
+} from "./store-schemas";
+import {
   dishInputSchema,
   dishStatusSchema,
   dishVisibilitySchema,
@@ -114,6 +119,8 @@ export const saveDish = createServerFn({ method: "POST" })
       category: data.category,
       recommended: data.recommended,
       available: data.available,
+      tags: data.tags,
+      prep_minutes: data.prep_minutes,
       ...(data.image_url !== undefined ? { image_url: data.image_url } : {}),
     };
     const query = data.id
@@ -199,4 +206,64 @@ export const resetDashboard = createServerFn({ method: "POST" })
       .not("id", "is", null);
     if (error) throw new Error(error.message);
     return { ok: true, deleted: count ?? 0 };
+  });
+
+/** Saves the store control centre (theme, fees, offers, open/closed, contacts). */
+export const saveStoreSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => storeSettingsSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { error } = await context.supabase
+      .from("store_settings")
+      .update(data)
+      .eq("id", true);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Applies or clears a discount on one product or on every product at once. */
+export const applyDiscount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => bulkDiscountSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const query = context.supabase.from("dishes").update({ discount: data.discount });
+    const { error } =
+      data.scope === "one" && data.dish_id
+        ? await query.eq("id", data.dish_id)
+        : await query.not("id", "is", null);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Removes every product from the shop. Irreversible — used by "vanish the shop". */
+export const deleteAllDishes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { error, count } = await context.supabase
+      .from("dishes")
+      .delete({ count: "exact" })
+      .not("id", "is", null);
+    if (error) throw new Error(error.message);
+    return { ok: true, deleted: count ?? 0 };
+  });
+
+/** Lets the signed-in admin change their own dashboard email and/or password. */
+export const updateAdminCredentials = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => adminCredentialsSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const payload: { email?: string; password?: string; email_confirm?: boolean } = {};
+    if (data.email) {
+      payload.email = data.email;
+      payload.email_confirm = true;
+    }
+    if (data.password) payload.password = data.password;
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(context.userId, payload);
+    if (error) throw new Error(error.message);
+    return { ok: true, emailChanged: Boolean(data.email) };
   });
