@@ -30,8 +30,13 @@ type Draft = {
   category: string;
   recommended: boolean;
   available: boolean;
+  tags: string[];
+  prep_minutes: string;
   image_url: string | null;
 };
+
+/** Badges the admin can attach to an item; these drive the customer filter chips. */
+const TAG_OPTIONS = ["Under 30 min", "Pure veg", "Bestseller", "Spicy", "New", "Chef's special"];
 
 const emptyDraft = (restaurantId: string): Draft => ({
   restaurant_id: restaurantId,
@@ -45,6 +50,8 @@ const emptyDraft = (restaurantId: string): Draft => ({
   category: "Mains",
   recommended: false,
   available: true,
+  tags: [],
+  prep_minutes: "25",
   image_url: null,
 });
 
@@ -115,6 +122,8 @@ export function MenuPanel({
       category: current.category.trim() || "Mains",
       recommended: current.recommended,
       available: current.available,
+      tags: current.tags,
+      prep_minutes: Math.min(240, Math.max(1, Math.round(Number(current.prep_minutes) || 25))),
       image_url: current.image_url,
     });
     setDraft(null);
@@ -216,6 +225,44 @@ export function MenuPanel({
               value={current.stock}
               onChange={(e) => setDraft({ ...current, stock: e.target.value })}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="d-prep">Prep time (minutes)</Label>
+            <Input
+              id="d-prep"
+              type="number"
+              min={1}
+              max={240}
+              value={current.prep_minutes}
+              onChange={(e) => setDraft({ ...current, prep_minutes: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label>Badges</Label>
+            <div className="flex flex-wrap gap-2">
+              {TAG_OPTIONS.map((tag) => {
+                const on = current.tags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() =>
+                      setDraft({
+                        ...current,
+                        tags: on ? current.tags.filter((t) => t !== tag) : [...current.tags, tag],
+                      })
+                    }
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      on
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border text-muted-foreground hover:border-primary"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="d-img">Item photo</Label>
@@ -370,6 +417,8 @@ export function MenuPanel({
                     category: d.category,
                     recommended: d.recommended,
                     available: d.available,
+                    tags: d.tags ?? [],
+                    prep_minutes: String(d.prep_minutes ?? 25),
                     image_url: d.image_url,
                   })
                 }
