@@ -54,6 +54,8 @@ export const dishInputSchema = z.object({
   category: z.string().trim().min(1).max(60).default("Mains"),
   recommended: z.boolean().default(false),
   available: z.boolean().default(true),
+  tags: z.array(z.string().trim().min(1).max(40)).max(12).default([]),
+  prep_minutes: z.number().int().min(1).max(240).default(25),
   image_url: z.string().trim().url().max(2000).nullable().optional(),
 });
 export type DishInput = z.infer<typeof dishInputSchema>;
@@ -107,6 +109,8 @@ export type AdminDish = {
   category: string;
   recommended: boolean;
   available: boolean;
+  tags: string[];
+  prep_minutes: number;
   image_url: string | null;
   created_at: string;
 };
