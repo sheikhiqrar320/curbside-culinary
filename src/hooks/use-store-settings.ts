@@ -24,7 +24,9 @@ export function useStoreSettings() {
     listeners += 1;
     if (!channel) {
       channel = supabase
-        .channel("store-settings-live")
+        // Fresh topic each time: Supabase reuses channels by topic name, and a
+        // reused-but-still-subscribed channel rejects new listeners.
+        .channel(`store-settings-live-${Math.random().toString(36).slice(2)}`)
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "store_settings" },
