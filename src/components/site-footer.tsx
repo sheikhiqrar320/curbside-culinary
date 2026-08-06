@@ -1,18 +1,22 @@
 import { Link } from "@tanstack/react-router";
-import { brand } from "@/lib/brand";
+import { useStoreSettings } from "@/hooks/use-store-settings";
 
 export function SiteFooter() {
+  const { settings } = useStoreSettings();
   return (
     <footer className="mt-24 border-t border-border bg-card">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-4">
         <div className="md:col-span-2">
-          <p className="font-display text-2xl font-bold text-primary">{brand.name}</p>
+          <p className="font-display text-2xl font-bold text-primary">{settings.store_name}</p>
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
-            {brand.tagline} Order from our kitchen, track every step, and pay cash on delivery.
+            {settings.tagline} Order from our kitchen, track every step, and pay cash on delivery.
           </p>
           <p className="mt-6 text-sm text-muted-foreground">
-            {brand.supportPhone} · {brand.supportEmail}
+            {settings.support_phone} · {settings.support_email}
           </p>
+          {settings.whatsapp && (
+            <p className="mt-1 text-sm text-muted-foreground">WhatsApp {settings.whatsapp}</p>
+          )}
         </div>
         <div>
           <h4 className="text-sm font-semibold">Explore</h4>
@@ -44,7 +48,7 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} {brand.name}. All rights reserved.
+        © {new Date().getFullYear()} {settings.store_name}. All rights reserved.
       </div>
     </footer>
   );
