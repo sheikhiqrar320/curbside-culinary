@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchStoreSettings } from "@/lib/store";
@@ -9,6 +9,9 @@ export const STORE_SETTINGS_KEY = ["store", "settings"] as const;
 /** Live store settings: refetches instantly whenever the admin saves a change. */
 export function useStoreSettings() {
   const queryClient = useQueryClient();
+  // Each mounted hook needs its own channel name; reusing one name across
+  // components makes Supabase reject the second subscription.
+  const channelId = useId();
 
   const query = useQuery({
     queryKey: STORE_SETTINGS_KEY,
@@ -18,7 +21,7 @@ export function useStoreSettings() {
 
   useEffect(() => {
     const channel = supabase
-      .channel("store-settings-live")
+      .channel(`store-settings-live${channelId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "store_settings" },
@@ -28,7 +31,7 @@ export function useStoreSettings() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient]);
+  }, [queryClient, channelId]);
 
   const settings: StoreSettings =
     query.data ?? ({ ...DEFAULT_STORE_SETTINGS, id: true, updated_at: "" } as StoreSettings);
