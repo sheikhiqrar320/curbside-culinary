@@ -119,6 +119,8 @@ export const saveDish = createServerFn({ method: "POST" })
       category: data.category,
       recommended: data.recommended,
       available: data.available,
+      tags: data.tags,
+      prep_minutes: data.prep_minutes,
       ...(data.image_url !== undefined ? { image_url: data.image_url } : {}),
     };
     const query = data.id
