@@ -16,6 +16,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/ui/sonner";
 import { SplashIntro } from "@/components/splash-intro";
+import { StoreTheme } from "@/components/store-chrome";
 
 function NotFoundComponent() {
   return (
@@ -138,6 +139,7 @@ function RootComponent() {
       <CartProvider>
         <SplashIntro />
         <div className="flex min-h-screen flex-col">
+          <StoreTheme />
           <SiteHeader />
           <main className="flex-1">
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
