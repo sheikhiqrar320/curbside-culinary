@@ -24,10 +24,12 @@ export type Database = {
           id: string
           image_url: string | null
           name: string
+          prep_minutes: number | null
           price: number
           recommended: boolean
           restaurant_id: string
           stock: number
+          tags: string[]
           veg: boolean
           visible: boolean
         }
@@ -40,10 +42,12 @@ export type Database = {
           id?: string
           image_url?: string | null
           name: string
+          prep_minutes?: number | null
           price: number
           recommended?: boolean
           restaurant_id: string
           stock?: number
+          tags?: string[]
           veg?: boolean
           visible?: boolean
         }
@@ -56,10 +60,12 @@ export type Database = {
           id?: string
           image_url?: string | null
           name?: string
+          prep_minutes?: number | null
           price?: number
           recommended?: boolean
           restaurant_id?: string
           stock?: number
+          tags?: string[]
           veg?: boolean
           visible?: boolean
         }
@@ -121,6 +127,7 @@ export type Database = {
           delivery_fee: number
           discount: number
           email: string | null
+          eta_minutes: number | null
           id: string
           items: Json
           landmark: string | null
@@ -144,6 +151,7 @@ export type Database = {
           delivery_fee?: number
           discount?: number
           email?: string | null
+          eta_minutes?: number | null
           id?: string
           items?: Json
           landmark?: string | null
@@ -167,6 +175,7 @@ export type Database = {
           delivery_fee?: number
           discount?: number
           email?: string | null
+          eta_minutes?: number | null
           id?: string
           items?: Json
           landmark?: string | null
@@ -279,6 +288,84 @@ export type Database = {
           reviews?: number
           slug?: string
           status?: Database["public"]["Enums"]["approval_status"]
+        }
+        Relationships: []
+      }
+      store_settings: {
+        Row: {
+          closed_reason: string
+          closed_title: string
+          created_at: string
+          delivery_fee: number
+          eta_max: number
+          eta_min: number
+          free_delivery_above: number
+          free_delivery_enabled: boolean
+          id: boolean
+          offer_active: boolean
+          offer_text: string
+          shop_open: boolean
+          store_name: string
+          support_email: string
+          support_phone: string
+          tagline: string
+          tax_rate: number
+          theme_accent: string
+          theme_background: string
+          theme_mode: string
+          theme_primary: string
+          updated_at: string
+          whatsapp: string
+        }
+        Insert: {
+          closed_reason?: string
+          closed_title?: string
+          created_at?: string
+          delivery_fee?: number
+          eta_max?: number
+          eta_min?: number
+          free_delivery_above?: number
+          free_delivery_enabled?: boolean
+          id?: boolean
+          offer_active?: boolean
+          offer_text?: string
+          shop_open?: boolean
+          store_name?: string
+          support_email?: string
+          support_phone?: string
+          tagline?: string
+          tax_rate?: number
+          theme_accent?: string
+          theme_background?: string
+          theme_mode?: string
+          theme_primary?: string
+          updated_at?: string
+          whatsapp?: string
+        }
+        Update: {
+          closed_reason?: string
+          closed_title?: string
+          created_at?: string
+          delivery_fee?: number
+          eta_max?: number
+          eta_min?: number
+          free_delivery_above?: number
+          free_delivery_enabled?: boolean
+          id?: boolean
+          offer_active?: boolean
+          offer_text?: string
+          shop_open?: boolean
+          store_name?: string
+          support_email?: string
+          support_phone?: string
+          tagline?: string
+          tax_rate?: number
+          theme_accent?: string
+          theme_background?: string
+          theme_mode?: string
+          theme_primary?: string
+          updated_at?: string
+          whatsapp?: string
         }
         Relationships: []
       }
