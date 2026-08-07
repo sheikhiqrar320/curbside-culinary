@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Check, X, ChevronDown } from "lucide-react";
+import { Check, X, ChevronDown, Download, Printer, Phone, Mail } from "lucide-react";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -12,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/brand";
+import { downloadCsv, toCsv } from "@/lib/csv";
+import { printInvoice } from "@/lib/invoice";
 import {
   ORDER_STATUSES,
   ORDER_STATUS_LABEL,
@@ -35,28 +38,77 @@ export function OrdersPanel({
   onStatus,
   onNotes,
   busy,
+  storeName = "Slider",
+  supportPhone = "",
 }: {
   orders: AdminOrder[];
   restaurants: AdminRestaurant[];
   onStatus: (id: string, status: OrderStatusValue) => void;
   onNotes: (id: string, notes: string) => void;
   busy: boolean;
+  storeName?: string;
+  supportPhone?: string;
 }) {
   const [filter, setFilter] = useState<"all" | OrderStatusValue>("all");
   const [q, setQ] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const [open, setOpen] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
   const nameOf = (id: string | null) => restaurants.find((r) => r.id === id)?.name ?? "—";
   const pending = orders.filter((o) => o.status === "received").length;
 
-  const list = orders.filter(
-    (o) =>
-      (filter === "all" || o.status === filter) &&
-      (q.trim() === "" ||
-        o.code.toLowerCase().includes(q.toLowerCase()) ||
-        o.customer_name.toLowerCase().includes(q.toLowerCase()) ||
-        o.phone.includes(q.trim())),
-  );
+  const term = q.trim().toLowerCase();
+  const fromTs = from ? new Date(`${from}T00:00:00`).getTime() : null;
+  const toTs = to ? new Date(`${to}T23:59:59.999`).getTime() : null;
+
+  const list = orders.filter((o) => {
+    if (filter !== "all" && o.status !== filter) return false;
+    const placed = new Date(o.placed_at).getTime();
+    if (fromTs !== null && placed < fromTs) return false;
+    if (toTs !== null && placed > toTs) return false;
+    if (!term) return true;
+    return (
+      o.code.toLowerCase().includes(term) ||
+      o.customer_name.toLowerCase().includes(term) ||
+      o.phone.includes(q.trim()) ||
+      (o.email ?? "").toLowerCase().includes(term) ||
+      o.address.toLowerCase().includes(term) ||
+      (o.pincode ?? "").includes(q.trim()) ||
+      o.items.some((i) => i.name.toLowerCase().includes(term))
+    );
+  });
+
+  function exportCsv() {
+    if (list.length === 0) {
+      toast.error("Nothing to export with these filters");
+      return;
+    }
+    downloadCsv(
+      `orders-${new Date().toISOString().slice(0, 10)}.csv`,
+      toCsv(list, [
+        { key: "code", label: "Order ID", value: (o) => o.code },
+        { key: "placed", label: "Placed at", value: (o) => new Date(o.placed_at).toLocaleString() },
+        { key: "status", label: "Status", value: (o) => ORDER_STATUS_LABEL[o.status] },
+        { key: "customer", label: "Customer", value: (o) => o.customer_name },
+        { key: "phone", label: "Phone", value: (o) => o.phone },
+        { key: "email", label: "Email", value: (o) => o.email ?? "" },
+        { key: "address", label: "Address", value: (o) => o.address },
+        { key: "landmark", label: "Landmark", value: (o) => o.landmark ?? "" },
+        { key: "pincode", label: "Pincode", value: (o) => o.pincode ?? "" },
+        { key: "restaurant", label: "Kitchen", value: (o) => nameOf(o.restaurant_id) },
+        { key: "items", label: "Items", value: (o) => o.items.map((i) => `${i.qty}x ${i.name}`).join(" | ") },
+        { key: "subtotal", label: "Subtotal", value: (o) => o.subtotal },
+        { key: "discount", label: "Discount", value: (o) => o.discount },
+        { key: "delivery", label: "Delivery fee", value: (o) => o.delivery_fee },
+        { key: "tax", label: "Tax", value: (o) => o.tax },
+        { key: "total", label: "Total", value: (o) => o.total },
+        { key: "payment", label: "Payment", value: (o) => o.payment_method.toUpperCase() },
+        { key: "notes", label: "Notes", value: (o) => o.admin_notes ?? "" },
+      ]),
+    );
+    toast.success(`Exported ${list.length} order${list.length === 1 ? "" : "s"}`);
+  }
 
   return (
     <div className="space-y-4">
@@ -66,13 +118,13 @@ export function OrdersPanel({
           approval — customers only get confirmed once you approve.
         </div>
       )}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-end gap-3">
         <Input
-          placeholder="Search order id or customer"
+          placeholder="Search id, customer, phone, email, address or item"
           value={q}
           maxLength={80}
           onChange={(e) => setQ(e.target.value)}
-          className="w-full max-w-xs"
+          className="w-full max-w-sm"
         />
         <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
           <SelectTrigger className="w-48">
@@ -87,6 +139,30 @@ export function OrdersPanel({
             ))}
           </SelectContent>
         </Select>
+        <label className="text-xs font-semibold text-muted-foreground">
+          From
+          <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="mt-1 w-40" />
+        </label>
+        <label className="text-xs font-semibold text-muted-foreground">
+          To
+          <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="mt-1 w-40" />
+        </label>
+        {(from || to || term || filter !== "all") && (
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setFrom("");
+              setTo("");
+              setQ("");
+              setFilter("all");
+            }}
+          >
+            Clear
+          </Button>
+        )}
+        <Button variant="outline" onClick={exportCsv}>
+          <Download className="size-4" /> Export CSV ({list.length})
+        </Button>
       </div>
 
       <ul className="space-y-2">
@@ -154,6 +230,16 @@ export function OrdersPanel({
                 >
                   <ChevronDown className="size-4" /> Details
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    if (!printInvoice(o, storeName, supportPhone))
+                      toast.error("Allow pop-ups to print the invoice");
+                  }}
+                >
+                  <Printer className="size-4" /> Invoice
+                </Button>
               </div>
             </div>
 
@@ -210,6 +296,20 @@ export function OrdersPanel({
                     <Button size="sm" disabled={busy} onClick={() => onNotes(o.id, noteDraft.trim())}>
                       Save note
                     </Button>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline" asChild>
+                      <a href={`tel:${o.phone}`}>
+                        <Phone className="size-4" /> Call customer
+                      </a>
+                    </Button>
+                    {o.email && (
+                      <Button size="sm" variant="outline" asChild>
+                        <a href={`mailto:${o.email}?subject=Your order ${o.code}`}>
+                          <Mail className="size-4" /> Email customer
+                        </a>
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
