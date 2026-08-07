@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { pushBrowserNotification } from "./use-browser-notifications";
+import { useAdminFeed } from "./use-admin-feed";
 
 /**
  * Subscribes the admin dashboard to live database events (orders, restaurants,
@@ -11,6 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 export function useAdminRealtime(enabled: boolean) {
   const queryClient = useQueryClient();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const feed = useAdminFeed();
+  const push = feed?.push;
 
   useEffect(() => {
     if (!enabled) return;
@@ -29,11 +33,20 @@ export function useAdminRealtime(enabled: boolean) {
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
         const next = payload.new as { code?: string; status?: string } | null;
         const prev = payload.eventType === "UPDATE" ? (payload.old as { status?: string }) : null;
-        if (payload.eventType === "INSERT") toast.success(`New order ${next?.code ?? ""}`);
-        else if (next?.status === "cancelled" && prev?.status !== "cancelled")
-          toast.error(`Order ${next?.code ?? ""} cancelled`);
-        else if (payload.eventType === "UPDATE" && prev?.status !== next?.status)
-          toast(`Order ${next?.code ?? ""} → ${next?.status?.replace(/_/g, " ")}`);
+        const code = next?.code ?? "";
+        if (payload.eventType === "INSERT") {
+          toast.success(`New order ${code}`);
+          pushBrowserNotification("New order received", `${code} is waiting for your approval.`);
+          push?.({ title: `New order ${code}`, body: "Waiting for your approval.", tone: "alert" });
+        } else if (next?.status === "cancelled" && prev?.status !== "cancelled") {
+          toast.error(`Order ${code} cancelled`);
+          pushBrowserNotification("Order cancelled", `${code} was cancelled.`);
+          push?.({ title: `Order ${code} cancelled`, body: "Order was cancelled.", tone: "alert" });
+        } else if (payload.eventType === "UPDATE" && prev?.status !== next?.status) {
+          const label = next?.status?.replace(/_/g, " ") ?? "";
+          toast(`Order ${code} → ${label}`);
+          push?.({ title: `Order ${code}`, body: `Status changed to ${label}.`, tone: "info" });
+        }
         refresh();
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "restaurants" }, refresh)
@@ -41,6 +54,7 @@ export function useAdminRealtime(enabled: boolean) {
       .on("postgres_changes", { event: "*", schema: "public", table: "media_assets" }, refresh)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "profiles" }, () => {
         toast("New customer registered");
+        push?.({ title: "New customer registered", body: "A new account just signed up.", tone: "info" });
         refresh();
       })
       .subscribe();
@@ -50,5 +64,5 @@ export function useAdminRealtime(enabled: boolean) {
       timer.current = null;
       supabase.removeChannel(channel);
     };
-  }, [enabled, queryClient]);
+  }, [enabled, queryClient, push]);
 }

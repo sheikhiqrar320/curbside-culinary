@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          details: Json
+          entity: string
+          entity_id: string | null
+          id: string
+          summary: string
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity?: string
+          entity_id?: string | null
+          id?: string
+          summary?: string
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity?: string
+          entity_id?: string | null
+          id?: string
+          summary?: string
+        }
+        Relationships: []
+      }
       dishes: {
         Row: {
           available: boolean
@@ -118,6 +154,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          audience: string
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          link: string | null
+          read_at: string | null
+          recipient_id: string | null
+          title: string
+        }
+        Insert: {
+          audience?: string
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          recipient_id?: string | null
+          title: string
+        }
+        Update: {
+          audience?: string
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          recipient_id?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           address: string
@@ -204,21 +276,36 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          email: string | null
           full_name: string | null
           id: string
+          loyalty_points: number
           phone: string | null
+          suspended: boolean
+          updated_at: string
+          wallet_balance: number
         }
         Insert: {
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id: string
+          loyalty_points?: number
           phone?: string | null
+          suspended?: boolean
+          updated_at?: string
+          wallet_balance?: number
         }
         Update: {
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
+          loyalty_points?: number
           phone?: string | null
+          suspended?: boolean
+          updated_at?: string
+          wallet_balance?: number
         }
         Relationships: []
       }
@@ -404,7 +491,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "restaurant_owner" | "customer"
+      app_role: "admin" | "restaurant_owner" | "customer" | "manager" | "staff"
       approval_status: "pending" | "approved" | "rejected"
       order_status:
         | "received"
@@ -540,7 +627,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "restaurant_owner", "customer"],
+      app_role: ["admin", "restaurant_owner", "customer", "manager", "staff"],
       approval_status: ["pending", "approved", "rejected"],
       order_status: [
         "received",

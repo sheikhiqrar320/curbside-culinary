@@ -23,7 +23,13 @@ import { AnalyticsPanel } from "@/components/admin/analytics-panel";
 import { LiveBoard } from "@/components/admin/live-board";
 import { MediaPanel } from "@/components/admin/media-panel";
 import { SettingsPanel } from "@/components/admin/settings-panel";
+import { CustomersPanel } from "@/components/admin/customers-panel";
+import { StaffPanel } from "@/components/admin/staff-panel";
+import { AuditPanel } from "@/components/admin/audit-panel";
+import { NotificationCenter } from "@/components/admin/notification-center";
 import { useAdminRealtime } from "@/hooks/use-admin-realtime";
+import { AdminFeedProvider, useAdminFeed } from "@/hooks/use-admin-feed";
+import { useBrowserNotifications } from "@/hooks/use-browser-notifications";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 import { formatMoney } from "@/lib/brand";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +47,17 @@ import {
   saveStoreSettings,
   updateAdminCredentials,
 } from "@/lib/admin.functions";
+import {
+  createPasswordResetLink,
+  createStaffAccount,
+  deleteCustomer,
+  deleteNotification,
+  getPeopleOverview,
+  sendNotification,
+  setCustomerSuspended,
+  setUserRole,
+  updateCustomer,
+} from "@/lib/people.functions";
 import type { DishInput, OrderStatusValue } from "@/lib/admin-schemas";
 import type { StoreSettingsInput } from "@/lib/store-schemas";
 
@@ -59,7 +76,11 @@ export const Route = createFileRoute("/_authenticated/admin")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: AdminPage,
+  component: () => (
+    <AdminFeedProvider>
+      <AdminPage />
+    </AdminFeedProvider>
+  ),
 });
 
 function AdminPage() {
@@ -75,6 +96,17 @@ function AdminPage() {
 
   useAdminRealtime(overview.isSuccess);
   const { settings } = useStoreSettings();
+  const feed = useAdminFeed();
+  const browserNotifications = useBrowserNotifications();
+
+  const peopleFn = useServerFn(getPeopleOverview);
+  const people = useQuery({
+    queryKey: ["admin", "people"],
+    queryFn: () => peopleFn(),
+    enabled: overview.isSuccess,
+    retry: false,
+  });
+  const invalidatePeople = () => queryClient.invalidateQueries({ queryKey: ["admin", "people"] });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin", "overview"] });
   const onError = (e: unknown) =>
@@ -145,6 +177,54 @@ function AdminPage() {
     onError,
   });
 
+  const customerUpdate = useMutation({
+    mutationFn: useServerFn(updateCustomer),
+    onSuccess: () => { toast.success("Customer updated"); invalidatePeople(); },
+    onError,
+  });
+  const customerSuspend = useMutation({
+    mutationFn: useServerFn(setCustomerSuspended),
+    onSuccess: () => { toast.success("Account status changed"); invalidatePeople(); },
+    onError,
+  });
+  const customerDelete = useMutation({
+    mutationFn: useServerFn(deleteCustomer),
+    onSuccess: () => { toast.success("Account deleted"); invalidatePeople(); },
+    onError,
+  });
+  const passwordLink = useMutation({
+    mutationFn: useServerFn(createPasswordResetLink),
+    onSuccess: async (r: { link: string }) => {
+      try {
+        await navigator.clipboard.writeText(r.link);
+        toast.success("Password reset link copied to your clipboard");
+      } catch {
+        toast.success("Reset link created", { description: r.link });
+      }
+    },
+    onError,
+  });
+  const roleGrant = useMutation({
+    mutationFn: useServerFn(setUserRole),
+    onSuccess: () => { toast.success("Role updated"); invalidatePeople(); },
+    onError,
+  });
+  const staffCreate = useMutation({
+    mutationFn: useServerFn(createStaffAccount),
+    onSuccess: () => { toast.success("Team account created"); invalidatePeople(); },
+    onError,
+  });
+  const notifySend = useMutation({
+    mutationFn: useServerFn(sendNotification),
+    onSuccess: () => { toast.success("Notification sent"); invalidatePeople(); },
+    onError,
+  });
+  const notifyDelete = useMutation({
+    mutationFn: useServerFn(deleteNotification),
+    onSuccess: invalidatePeople,
+    onError,
+  });
+
   const busy =
     dishSave.isPending ||
     dishToggle.isPending ||
@@ -156,6 +236,13 @@ function AdminPage() {
     discountAll.isPending ||
     wipeMenu.isPending ||
     credentials.isPending ||
+    customerUpdate.isPending ||
+    customerSuspend.isPending ||
+    customerDelete.isPending ||
+    passwordLink.isPending ||
+    roleGrant.isPending ||
+    staffCreate.isPending ||
+    notifySend.isPending ||
     reset.isPending;
 
   async function signOut() {
@@ -197,6 +284,7 @@ function AdminPage() {
     (o) => !["delivered", "cancelled"].includes(o.status),
   ).length;
   const awaiting = orders.filter((o) => o.status === "received").length;
+  const peopleData = people.data ?? { customers: [], audit: [], notifications: [] };
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -218,6 +306,16 @@ function AdminPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <NotificationCenter
+              feed={feed?.feed ?? []}
+              history={peopleData.notifications}
+              customers={peopleData.customers}
+              busy={busy}
+              permission={browserNotifications.permission}
+              onEnable={() => void browserNotifications.request()}
+              onSend={(input) => notifySend.mutate({ data: input })}
+              onDelete={(id) => notifyDelete.mutate({ data: { id } })}
+            />
             <Button variant="outline" onClick={() => overview.refetch()} disabled={overview.isFetching}>
               {overview.isFetching ? "Refreshing…" : "Refresh"}
             </Button>
@@ -264,6 +362,9 @@ function AdminPage() {
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="menu">Food</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
+          <TabsTrigger value="customers">Customers</TabsTrigger>
+          <TabsTrigger value="staff">Staff</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="media">Images</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
@@ -301,7 +402,34 @@ function AdminPage() {
             busy={busy}
             onStatus={(id, status: OrderStatusValue) => orderStatus.mutate({ data: { id, status } })}
             onNotes={(id, notes) => orderNotes.mutate({ data: { id, notes } })}
+            storeName={settings.store_name}
+            supportPhone={settings.support_phone}
           />
+        </TabsContent>
+
+        <TabsContent value="customers" className="mt-6">
+          <CustomersPanel
+            customers={peopleData.customers}
+            orders={orders}
+            busy={busy}
+            onUpdate={(input) => customerUpdate.mutate({ data: input })}
+            onSuspend={(id, suspended) => customerSuspend.mutate({ data: { id, suspended } })}
+            onDelete={(id) => customerDelete.mutate({ data: { id } })}
+            onResetPassword={(email) => passwordLink.mutate({ data: { email } })}
+          />
+        </TabsContent>
+
+        <TabsContent value="staff" className="mt-6">
+          <StaffPanel
+            people={peopleData.customers}
+            busy={busy}
+            onRole={(user_id, role, enabled) => roleGrant.mutate({ data: { user_id, role, enabled } })}
+            onCreate={(input) => staffCreate.mutate({ data: input })}
+          />
+        </TabsContent>
+
+        <TabsContent value="activity" className="mt-6">
+          <AuditPanel logs={peopleData.audit} />
         </TabsContent>
 
         <TabsContent value="media" className="mt-6">
