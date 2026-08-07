@@ -44,7 +44,7 @@ export async function logAudit(context: AdminContext, entry: AuditEntry) {
       entity: entry.entity ?? "",
       entity_id: entry.entity_id ?? null,
       summary: entry.summary ?? "",
-      details: entry.details ?? {},
+      details: JSON.parse(JSON.stringify(entry.details ?? {})),
     });
   } catch {
     /* audit logging is best-effort */
