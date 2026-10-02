@@ -268,7 +268,7 @@ function AdminPage() {
         <ShieldAlert className="mx-auto size-10 text-destructive" />
         <h1 className="mt-4 font-display text-2xl font-bold">Admin access required</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Your account doesn't have the admin role, so this dashboard stays locked.
+          {overview.error instanceof Error && !/Forbidden/.test(overview.error.message) ? `Couldn't load the dashboard: ${overview.error.message}` : "Your account doesn't have the admin role, so this dashboard stays locked."}
         </p>
         <Button className="mt-6" variant="outline" onClick={signOut}>
           Sign in with another account
