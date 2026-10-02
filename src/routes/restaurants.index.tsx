@@ -2,8 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import { useState } from "react";
 import { DishCard } from "@/components/dish-card";
-import { RestaurantCard } from "@/components/restaurant-card";
-import { dishes, restaurants, restaurantById } from "@/lib/catalog";
 import { useProducts } from "@/hooks/use-products";
 import { matchesSearch } from "@/lib/products";
 import { brand } from "@/lib/brand";
@@ -17,13 +15,13 @@ export const Route = createFileRoute("/restaurants/")({
   }),
   head: () => ({
     meta: [
-      { title: "Browse restaurants & dishes | Slider" },
+      { title: "Menu | Slider" },
       {
         name: "description",
         content:
           "Search and filter our menu by cuisine, rating, delivery time and veg-only. Add dishes straight to your cart.",
       },
-      { property: "og:title", content: "Browse restaurants & dishes | Slider" },
+      { property: "og:title", content: "Menu | Slider" },
       {
         property: "og:description",
         content: "Search and filter our menu by cuisine, rating and delivery time.",
@@ -46,7 +44,6 @@ function RestaurantsPage() {
   const navigate = Route.useNavigate();
   const [query, setQuery] = useState(q ?? "");
   const [vegOnly, setVegOnly] = useState(false);
-  const [fast, setFast] = useState(false);
   const [sort, setSort] = useState<(typeof SORTS)[number]>("Relevance");
   const [category, setCategory] = useState<string | null>(null);
   const [band, setBand] = useState<(typeof PRICE_BANDS)[number]["id"]>("all");
@@ -66,38 +63,9 @@ function RestaurantsPage() {
     .filter((p) => !tag || p.tags.includes(tag))
     .sort((a, b) => (sort === "Cost: low to high" ? a.price - b.price : 0));
 
-  let list = restaurants.filter((r) => {
-    if (vegOnly && !r.pureVeg) return false;
-    if (fast && r.deliveryMins[1] > 30) return false;
-    if (!term) return true;
-    return (
-      r.name.toLowerCase().includes(term) ||
-      r.cuisines.some((c) => c.toLowerCase().includes(term)) ||
-      dishes.some((d) => d.restaurantId === r.id && d.name.toLowerCase().includes(term))
-    );
-  });
-
-  if (sort === "Rating") list = [...list].sort((a, b) => b.rating - a.rating);
-  if (sort === "Delivery time") list = [...list].sort((a, b) => a.deliveryMins[1] - b.deliveryMins[1]);
-  if (sort === "Cost: low to high") list = [...list].sort((a, b) => a.costForTwo - b.costForTwo);
-
-  const matchingDishes =
-    term || category || band !== "all"
-      ? dishes.filter(
-          (d) =>
-            (!vegOnly || d.veg) &&
-            (!category || d.category === category) &&
-            d.price <= maxPrice &&
-            (!term ||
-              d.name.toLowerCase().includes(term) ||
-              d.category.toLowerCase().includes(term) ||
-              d.description.toLowerCase().includes(term)),
-        )
-      : [];
-
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-      <h1 className="font-display text-3xl font-bold">Browse restaurants</h1>
+      <h1 className="font-display text-3xl font-bold">Our menu</h1>
 
       {!shopOpen && (
         <div className="mt-6">
@@ -121,8 +89,8 @@ function RestaurantsPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <FilterChip active={vegOnly} onClick={() => setVegOnly((v) => !v)} label="Pure veg" />
-          <FilterChip active={fast} onClick={() => setFast((v) => !v)} label="Under 30 min" />
-          {SORTS.filter((s) => s !== "Relevance").map((s) => (
+          
+          {SORTS.filter((s) => s === "Cost: low to high").map((s) => (
             <FilterChip
               key={s}
               active={sort === s}
@@ -157,20 +125,15 @@ function RestaurantsPage() {
 
       <section className="mt-10">
         <h2 className="font-display text-2xl font-bold">
-          Our menu{" "}
+          Dishes{" "}
           <span className="text-sm font-normal text-muted-foreground">
             {products.isLoading ? "loading…" : `${shownProducts.length} items · live`}
           </span>
         </h2>
         {shownProducts.length > 0 ? (
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {shownProducts.map((p) => (
-              <div key={p.id}>
-                <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                  {p.restaurantName} · {p.category}
-                </p>
-                <DishCard dish={p} />
-              </div>
+              <DishCard key={p.id} dish={p} />
             ))}
           </div>
         ) : (
@@ -185,35 +148,6 @@ function RestaurantsPage() {
         </p>
       </section>
 
-      <p className="mt-6 text-sm text-muted-foreground">{list.length} restaurants open now</p>
-
-      {list.length > 0 ? (
-        <div className="mt-6 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-          {list.map((r) => (
-            <RestaurantCard key={r.id} restaurant={r} />
-          ))}
-        </div>
-      ) : (
-        <p className="mt-10 rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
-          No restaurants match those filters. Try clearing one.
-        </p>
-      )}
-
-      {matchingDishes.length > 0 && (
-        <section className="mt-14">
-          <h2 className="font-display text-2xl font-bold">Dishes matching "{query}"</h2>
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            {matchingDishes.map((d) => (
-              <div key={d.id}>
-                <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                  {restaurantById(d.restaurantId)?.name}
-                </p>
-                <DishCard dish={d} />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }

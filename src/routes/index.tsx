@@ -3,9 +3,9 @@ import { ChevronLeft, ChevronRight, Search, Star } from "lucide-react";
 import { useRef, useState } from "react";
 import heroImage from "@/assets/hero-spread.jpg";
 import { DishCard } from "@/components/dish-card";
-import { RestaurantCard } from "@/components/restaurant-card";
+import { useProducts } from "@/hooks/use-products";
 import { brand } from "@/lib/brand";
-import { categories, coupons, dishes, restaurants, reviews } from "@/lib/catalog";
+import { categories, coupons, reviews } from "@/lib/catalog";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -34,7 +34,8 @@ function Index() {
   const scrollRail = (dir: number) =>
     railRef.current?.scrollBy({ left: dir * 320, behavior: "smooth" });
 
-  const popular = dishes.filter((d) => d.recommended).slice(0, 6);
+  const products = useProducts();
+  const menu = (products.data ?? []).slice(0, 9);
 
   return (
     <>
@@ -64,8 +65,8 @@ function Index() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search restaurants or dishes"
-                aria-label="Search restaurants or dishes"
+                placeholder="Search dishes"
+                aria-label="Search dishes"
                 className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
             </div>
@@ -146,31 +147,25 @@ function Index() {
         </div>
       </section>
 
-      {/* Featured restaurants */}
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      {/* Live menu */}
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
         <div className="mb-6 flex items-baseline justify-between gap-4">
-          <h2 className="font-display text-2xl font-bold">Featured restaurants</h2>
+          <h2 className="font-display text-3xl font-bold">Fresh from our kitchen</h2>
           <Link to="/restaurants" className="text-sm font-semibold text-primary">
-            See all
+            Full menu
           </Link>
         </div>
-        <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-          {restaurants
-            .filter((r) => r.featured)
-            .map((r) => (
-              <RestaurantCard key={r.id} restaurant={r} />
+        {menu.length > 0 ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {menu.map((d) => (
+              <DishCard key={d.id} dish={d} />
             ))}
-        </div>
-      </section>
-
-      {/* Popular dishes */}
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-        <h2 className="mb-6 font-display text-2xl font-bold">Popular dishes near you</h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          {popular.map((d) => (
-            <DishCard key={d.id} dish={d} />
-          ))}
-        </div>
+          </div>
+        ) : (
+          <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+            {products.isLoading ? "Loading menu…" : "Our menu is being prepared — check back soon."}
+          </p>
+        )}
       </section>
 
       {/* Reviews */}

@@ -23,7 +23,7 @@ export function SiteFooter() {
           <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
             <li>
               <Link to="/restaurants" className="hover:text-primary">
-                All restaurants
+                Full menu
               </Link>
             </li>
             <li>
