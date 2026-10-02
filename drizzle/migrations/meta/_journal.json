@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790945176849,
+      "tag": "0000_fix_admin_role_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790945203339,
+      "tag": "0001_drop_recursive_role_policies",
+      "breakpoints": true
+    }
+  ]
+}
