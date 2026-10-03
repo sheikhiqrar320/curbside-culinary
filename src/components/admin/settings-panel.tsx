@@ -17,7 +17,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { uploadImage } from "@/lib/media";
+import { isVideoUrl, uploadImage } from "@/lib/media";
 import type { StoreSettings, StoreSettingsInput } from "@/lib/store-schemas";
 
 type Props = {
@@ -142,18 +142,21 @@ export function SettingsPanel({
 
       <Section title="App background" icon={ImageIcon}>
         <p className="text-sm text-muted-foreground">
-          Pick any photo from your gallery (a 3D café scene, your interior, a texture). It shows behind every page.
+          Pick any photo or video (up to 50 MB) from your gallery — a 3D café scene, your interior, a texture. It shows behind every page.
         </p>
-        {form.background_url && (
-          <img src={form.background_url} alt="Current background" className="aspect-video w-full rounded-xl object-cover" />
-        )}
+        {form.background_url &&
+          (isVideoUrl(form.background_url) ? (
+            <video src={form.background_url} autoPlay muted loop playsInline className="aspect-video w-full rounded-xl object-cover" />
+          ) : (
+            <img src={form.background_url} alt="Current background" className="aspect-video w-full rounded-xl object-cover" />
+          ))}
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" disabled={uploadingBg}>
             <label className="cursor-pointer">
               {uploadingBg ? "Uploading…" : form.background_url ? "Change background" : "Upload from gallery"}
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*"
                 className="hidden"
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
@@ -161,7 +164,7 @@ export function SettingsPanel({
                   if (!file) return;
                   setUploadingBg(true);
                   try {
-                    const { url } = await uploadImage(file);
+                    const { url } = await uploadImage(file, { allowVideo: true });
                     set("background_url", url);
                     toast.success("Background ready — press Save to publish it");
                   } catch (err) {
@@ -188,6 +191,25 @@ export function SettingsPanel({
             onChange={(e) => set("background_dim", Number(e.target.value))}
           />
         </Field>
+      </Section>
+
+      <Section title="Spend & save discount" icon={Percent}>
+        <Toggle
+          label="Give a discount when customers spend enough"
+          checked={form.spend_discount_enabled}
+          onCheckedChange={(v) => set("spend_discount_enabled", v)}
+        />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Minimum order (₹)">
+            <Input type="number" min={0} value={form.spend_discount_min} onChange={(e) => set("spend_discount_min", Number(e.target.value) || 0)} />
+          </Field>
+          <Field label="Discount (%)">
+            <Input type="number" min={0} max={90} value={form.spend_discount_percent} onChange={(e) => set("spend_discount_percent", Math.min(90, Number(e.target.value) || 0))} />
+          </Field>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Customers see: "Spend ₹{form.spend_discount_min} or more and get {form.spend_discount_percent}% off" — applied automatically at checkout.
+        </p>
       </Section>
 
       <Section title="Contact & offers" icon={Percent}>

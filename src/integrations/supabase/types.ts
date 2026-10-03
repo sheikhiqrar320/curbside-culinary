@@ -394,6 +394,9 @@ export type Database = {
           offer_active: boolean
           offer_text: string
           shop_open: boolean
+          spend_discount_enabled: boolean
+          spend_discount_min: number
+          spend_discount_percent: number
           store_name: string
           support_email: string
           support_phone: string
@@ -421,6 +424,9 @@ export type Database = {
           offer_active?: boolean
           offer_text?: string
           shop_open?: boolean
+          spend_discount_enabled?: boolean
+          spend_discount_min?: number
+          spend_discount_percent?: number
           store_name?: string
           support_email?: string
           support_phone?: string
@@ -448,6 +454,9 @@ export type Database = {
           offer_active?: boolean
           offer_text?: string
           shop_open?: boolean
+          spend_discount_enabled?: boolean
+          spend_discount_min?: number
+          spend_discount_percent?: number
           store_name?: string
           support_email?: string
           support_phone?: string

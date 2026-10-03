@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Megaphone, Moon } from "lucide-react";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 import { isColor } from "@/lib/store";
+import { isVideoUrl } from "@/lib/media";
 
 /**
  * Applies the admin's chosen colours + light/dark mode to the whole app and
@@ -25,12 +26,30 @@ export function StoreTheme() {
 
   const background = settings.background_url ? (
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
-      <img src={settings.background_url} alt="" className="size-full object-cover" />
+      {isVideoUrl(settings.background_url) ? (
+        <video src={settings.background_url} autoPlay muted loop playsInline className="size-full object-cover" />
+      ) : (
+        <img src={settings.background_url} alt="" className="size-full object-cover" />
+      )}
       <div className="absolute inset-0 bg-background" style={{ opacity: (settings.background_dim ?? 60) / 100 }} />
     </div>
   ) : null;
 
-  if (!settings.offer_active || !settings.offer_text) return background;
+  const spend =
+    settings.spend_discount_enabled && settings.spend_discount_percent > 0 ? (
+      <div className="bg-accent px-4 py-2 text-center text-sm font-bold text-accent-foreground">
+        🎉 Spend ₹{settings.spend_discount_min} or more and get {settings.spend_discount_percent}% off — applied automatically
+      </div>
+    ) : null;
+
+  if (!settings.offer_active || !settings.offer_text)
+    return (
+      <>
+        {background}
+    {spend}
+        {spend}
+      </>
+    );
 
   return (
     <>

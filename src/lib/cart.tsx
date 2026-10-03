@@ -78,6 +78,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (active.type === "delivery") deliveryFee = 0;
     }
 
+    if (
+      settings.spend_discount_enabled &&
+      settings.spend_discount_percent > 0 &&
+      subtotal >= settings.spend_discount_min
+    ) {
+      discount = Math.max(discount, (subtotal * settings.spend_discount_percent) / 100);
+    }
+
     const taxable = Math.max(subtotal - discount, 0);
     const tax = Math.round(taxable * settings.tax_rate);
 
