@@ -1,0 +1,2 @@
+ALTER TABLE public.store_settings ADD COLUMN IF NOT EXISTS background_url text NOT NULL DEFAULT '';
+ALTER TABLE public.store_settings ADD COLUMN IF NOT EXISTS background_dim integer NOT NULL DEFAULT 60;
