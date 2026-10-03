@@ -380,6 +380,8 @@ export type Database = {
       }
       store_settings: {
         Row: {
+          background_dim: number
+          background_url: string
           closed_reason: string
           closed_title: string
           created_at: string
@@ -405,6 +407,8 @@ export type Database = {
           whatsapp: string
         }
         Insert: {
+          background_dim?: number
+          background_url?: string
           closed_reason?: string
           closed_title?: string
           created_at?: string
@@ -430,6 +434,8 @@ export type Database = {
           whatsapp?: string
         }
         Update: {
+          background_dim?: number
+          background_url?: string
           closed_reason?: string
           closed_title?: string
           created_at?: string

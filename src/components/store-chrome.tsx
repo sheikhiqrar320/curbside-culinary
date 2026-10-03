@@ -23,14 +23,24 @@ export function StoreTheme() {
     root.classList.toggle("dark", settings.theme_mode === "dark");
   }, [settings.theme_primary, settings.theme_accent, settings.theme_background, settings.theme_mode]);
 
-  if (!settings.offer_active || !settings.offer_text) return null;
+  const background = settings.background_url ? (
+    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
+      <img src={settings.background_url} alt="" className="size-full object-cover" />
+      <div className="absolute inset-0 bg-background" style={{ opacity: (settings.background_dim ?? 60) / 100 }} />
+    </div>
+  ) : null;
+
+  if (!settings.offer_active || !settings.offer_text) return background;
 
   return (
+    <>
+    {background}
     <div className="bg-primary px-4 py-2 text-center text-sm font-semibold text-primary-foreground">
       <span className="inline-flex items-center gap-2">
         <Megaphone className="size-4" /> {settings.offer_text}
       </span>
     </div>
+    </>
   );
 }
 

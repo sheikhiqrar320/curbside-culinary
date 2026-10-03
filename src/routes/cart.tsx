@@ -10,9 +10,9 @@ export const Route = createFileRoute("/cart")({
   head: () => ({
     meta: [
       { title: "Your cart | Slider" },
-      { name: "description", content: "Review your items, adjust quantities and apply a coupon before checkout." },
+      { name: "description", content: "Review your items, adjust quantitiesbefore checkout." },
       { property: "og:title", content: "Your cart | Slider" },
-      { property: "og:description", content: "Review your items and apply a coupon before checkout." },
+      { property: "og:description", content: "Review your itemsbefore checkout." },
     ],
   }),
   component: CartPage,
@@ -78,6 +78,7 @@ function CartPage() {
           ))}
         </div>
 
+        {coupons.length > 0 && (
         <div className="card-surface mt-6 p-5">
           <h2 className="font-display text-lg font-bold">Have a coupon?</h2>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
@@ -114,6 +115,7 @@ function CartPage() {
             ))}
           </ul>
         </div>
+        )}
       </div>
 
       <aside className="lg:col-span-1">

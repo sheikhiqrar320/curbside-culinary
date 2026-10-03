@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { KeyRound, Palette, Percent, Store, Trash2 } from "lucide-react";
+import { ImageIcon, KeyRound, Palette, Percent, Store, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { uploadImage } from "@/lib/media";
 import type { StoreSettings, StoreSettingsInput } from "@/lib/store-schemas";
 
 type Props = {
@@ -88,6 +90,7 @@ export function SettingsPanel({
   onCredentials,
 }: Props) {
   const [form, setForm] = useState<StoreSettings>(settings);
+  const [uploadingBg, setUploadingBg] = useState(false);
   const [bulkDiscount, setBulkDiscount] = useState(10);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -134,6 +137,56 @@ export function SettingsPanel({
         </Field>
         <Field label="Tagline">
           <Input value={form.tagline} maxLength={140} onChange={(e) => set("tagline", e.target.value)} />
+        </Field>
+      </Section>
+
+      <Section title="App background" icon={ImageIcon}>
+        <p className="text-sm text-muted-foreground">
+          Pick any photo from your gallery (a 3D café scene, your interior, a texture). It shows behind every page.
+        </p>
+        {form.background_url && (
+          <img src={form.background_url} alt="Current background" className="aspect-video w-full rounded-xl object-cover" />
+        )}
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" disabled={uploadingBg}>
+            <label className="cursor-pointer">
+              {uploadingBg ? "Uploading…" : form.background_url ? "Change background" : "Upload from gallery"}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!file) return;
+                  setUploadingBg(true);
+                  try {
+                    const { url } = await uploadImage(file);
+                    set("background_url", url);
+                    toast.success("Background ready — press Save to publish it");
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Upload failed");
+                  } finally {
+                    setUploadingBg(false);
+                  }
+                }}
+              />
+            </label>
+          </Button>
+          {form.background_url && (
+            <Button variant="ghost" onClick={() => set("background_url", "")}>
+              Remove background
+            </Button>
+          )}
+        </div>
+        <Field label={`Fade over background (${form.background_dim ?? 60}%)`}>
+          <input
+            type="range"
+            min={0}
+            max={95}
+            value={form.background_dim ?? 60}
+            onChange={(e) => set("background_dim", Number(e.target.value))}
+          />
         </Field>
       </Section>
 

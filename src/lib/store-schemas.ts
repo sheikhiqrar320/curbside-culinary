@@ -16,6 +16,8 @@ export const storeSettingsSchema = z.object({
   theme_accent: colorField,
   theme_background: colorField,
   theme_mode: z.enum(["light", "dark"]).default("light"),
+  background_url: z.string().trim().max(2000).default(""),
+  background_dim: z.number().int().min(0).max(95).default(60),
   offer_active: z.boolean().default(false),
   offer_text: z.string().trim().max(200).default(""),
   delivery_fee: z.number().int().min(0).max(5000).default(39),

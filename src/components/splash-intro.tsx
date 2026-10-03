@@ -1,21 +1,14 @@
 import { useEffect, useState } from "react";
 
-const SEEN_KEY = "slider.splash.v1";
 
 /**
- * Cinematic brand intro shown once per browser session when the app opens.
+ * Cinematic brand intro shown every time when the app opens.
  * Purely presentational — it never blocks routing once the animation ends.
  */
 export function SplashIntro() {
   const [phase, setPhase] = useState<"hidden" | "playing" | "leaving">("hidden");
 
   useEffect(() => {
-    if (sessionStorage.getItem(SEEN_KEY)) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      sessionStorage.setItem(SEEN_KEY, "1");
-      return;
-    }
-    sessionStorage.setItem(SEEN_KEY, "1");
     setPhase("playing");
     const leave = setTimeout(() => setPhase("leaving"), 2200);
     const done = setTimeout(() => setPhase("hidden"), 3000);

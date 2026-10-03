@@ -17,7 +17,6 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RestaurantsIndexRouteImport } from './routes/restaurants.index'
 import { Route as OrdersIndexRouteImport } from './routes/orders.index'
-import { Route as RestaurantsSlugRouteImport } from './routes/restaurants.$slug'
 import { Route as OrdersIdRouteImport } from './routes/orders.$id'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
@@ -60,11 +59,6 @@ const OrdersIndexRoute = OrdersIndexRouteImport.update({
   path: '/orders/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RestaurantsSlugRoute = RestaurantsSlugRouteImport.update({
-  id: '/restaurants/$slug',
-  path: '/restaurants/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const OrdersIdRoute = OrdersIdRouteImport.update({
   id: '/orders/$id',
   path: '/orders/$id',
@@ -84,7 +78,6 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/orders/$id': typeof OrdersIdRoute
-  '/restaurants/$slug': typeof RestaurantsSlugRoute
   '/orders/': typeof OrdersIndexRoute
   '/restaurants/': typeof RestaurantsIndexRoute
 }
@@ -96,7 +89,6 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/orders/$id': typeof OrdersIdRoute
-  '/restaurants/$slug': typeof RestaurantsSlugRoute
   '/orders': typeof OrdersIndexRoute
   '/restaurants': typeof RestaurantsIndexRoute
 }
@@ -110,7 +102,6 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/orders/$id': typeof OrdersIdRoute
-  '/restaurants/$slug': typeof RestaurantsSlugRoute
   '/orders/': typeof OrdersIndexRoute
   '/restaurants/': typeof RestaurantsIndexRoute
 }
@@ -124,7 +115,6 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin'
     | '/orders/$id'
-    | '/restaurants/$slug'
     | '/orders/'
     | '/restaurants/'
   fileRoutesByTo: FileRoutesByTo
@@ -136,7 +126,6 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin'
     | '/orders/$id'
-    | '/restaurants/$slug'
     | '/orders'
     | '/restaurants'
   id:
@@ -149,7 +138,6 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/admin'
     | '/orders/$id'
-    | '/restaurants/$slug'
     | '/orders/'
     | '/restaurants/'
   fileRoutesById: FileRoutesById
@@ -162,7 +150,6 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   OrdersIdRoute: typeof OrdersIdRoute
-  RestaurantsSlugRoute: typeof RestaurantsSlugRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
   RestaurantsIndexRoute: typeof RestaurantsIndexRoute
 }
@@ -225,13 +212,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/restaurants/$slug': {
-      id: '/restaurants/$slug'
-      path: '/restaurants/$slug'
-      fullPath: '/restaurants/$slug'
-      preLoaderRoute: typeof RestaurantsSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/orders/$id': {
       id: '/orders/$id'
       path: '/orders/$id'
@@ -268,7 +248,6 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   OrdersIdRoute: OrdersIdRoute,
-  RestaurantsSlugRoute: RestaurantsSlugRoute,
   OrdersIndexRoute: OrdersIndexRoute,
   RestaurantsIndexRoute: RestaurantsIndexRoute,
 }

@@ -280,11 +280,17 @@ export const dishes: Dish[] = [
   },
 ];
 
-export const coupons = [
-  { code: "WELCOME50", label: "50% off up to ₹150 on your first order", type: "percent", value: 50, cap: 150, minOrder: 249 },
-  { code: "FLAT100", label: "Flat ₹100 off on orders above ₹499", type: "flat", value: 100, cap: 100, minOrder: 499 },
-  { code: "FREEDEL", label: "Free delivery, no minimum", type: "delivery", value: 0, cap: 0, minOrder: 0 },
-] as const;
+export type Coupon = {
+  code: string;
+  label: string;
+  type: "percent" | "flat" | "delivery";
+  value: number;
+  cap: number;
+  minOrder: number;
+};
+
+/** No built-in offers — the only offers customers see are the ones the admin turns on. */
+export const coupons: Coupon[] = [];
 
 export const reviews = [
   {
