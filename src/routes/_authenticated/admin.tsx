@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ShieldAlert, IndianRupee, ShoppingBag, Clock, RotateCcw, Package, Users } from "lucide-react";
 import { toast } from "sonner";
+import { useEffect } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -83,9 +84,26 @@ export const Route = createFileRoute("/_authenticated/admin")({
   ),
 });
 
+// Pending sign-out when the admin leaves; cancelled if the page re-mounts right away.
+let leaveTimer: ReturnType<typeof setTimeout> | undefined;
+
 function AdminPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  // Admin must sign in again every time they leave the panel or close the tab.
+  useEffect(() => {
+    clearTimeout(leaveTimer);
+    const lock = () => {
+      queryClient.clear();
+      void supabase.auth.signOut({ scope: "local" });
+    };
+    window.addEventListener("pagehide", lock);
+    return () => {
+      window.removeEventListener("pagehide", lock);
+      leaveTimer = setTimeout(lock, 300);
+    };
+  }, [queryClient]);
   const overviewFn = useServerFn(getAdminOverview);
 
   const overview = useQuery({
