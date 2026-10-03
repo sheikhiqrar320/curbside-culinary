@@ -5,7 +5,7 @@ import heroImage from "@/assets/hero-spread.jpg";
 import { DishCard } from "@/components/dish-card";
 import { useProducts } from "@/hooks/use-products";
 import { brand } from "@/lib/brand";
-import { categories, coupons, reviews } from "@/lib/catalog";
+import { categories, reviews } from "@/lib/catalog";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -14,12 +14,12 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Order biryani, pizza, burgers and more from our kitchen. Live tracking, coupons and cash on delivery.",
+          "Order biryani, pizza, burgers and more from our kitchen. Live tracking and cash on delivery.",
       },
       { property: "og:title", content: "Slider — Hot Food Delivered Fast" },
       {
         property: "og:description",
-        content: "Order from our kitchen with live tracking, coupons and cash on delivery.",
+        content: "Order from our kitchen with live tracking and cash on delivery.",
       },
     ],
   }),
@@ -49,8 +49,7 @@ function Index() {
             Hot food, <span className="text-primary">slid to your door.</span>
           </h1>
           <p className="mt-5 max-w-md text-lg leading-relaxed text-muted-foreground">
-            Freshly cooked in our own kitchen, live order tracking to the minute, and coupons that
-            actually apply at checkout.
+            Freshly cooked in our own kitchen, live order tracking to the minute and cash on delivery.
           </p>
 
           <form
@@ -124,25 +123,6 @@ function Index() {
               </span>
               <span className="mt-2 block text-sm font-semibold">{c.label}</span>
             </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Offers */}
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <h2 className="mb-6 font-display text-2xl font-bold">Offers for you</h2>
-        <div className="grid gap-4 md:grid-cols-3">
-          {coupons.map((c) => (
-            <div
-              key={c.code}
-              className="card-surface flex flex-col justify-between gap-4 p-6"
-              style={{ backgroundImage: "var(--gradient-warm)" }}
-            >
-              <p className="font-display text-xl font-bold text-primary-foreground">{c.label}</p>
-              <span className="w-fit rounded-lg border border-dashed border-primary-foreground/60 px-3 py-1 font-mono text-sm text-primary-foreground">
-                {c.code}
-              </span>
-            </div>
           ))}
         </div>
       </section>
