@@ -33,9 +33,15 @@ export async function listMedia(): Promise<MediaAsset[]> {
 }
 
 /** Uploads a device-gallery image to the private media bucket and returns a long-lived signed URL. */
-export async function uploadImage(file: File) {
-  if (!file.type.startsWith("image/")) throw new Error("Please pick an image file");
-  if (file.size > 5 * 1024 * 1024) throw new Error("Images must be smaller than 5 MB");
+/** True when a stored media URL points at a video file. */
+export const isVideoUrl = (url: string) => /\.(mp4|webm|mov|m4v|ogg)$/i.test(url.split("?")[0]);
+
+export async function uploadImage(file: File, opts: { allowVideo?: boolean } = {}) {
+  const isVideo = file.type.startsWith("video/");
+  if (!file.type.startsWith("image/") && !(opts.allowVideo && isVideo))
+    throw new Error(opts.allowVideo ? "Please pick an image or video" : "Please pick an image file");
+  const limit = isVideo ? 50 : 5;
+  if (file.size > limit * 1024 * 1024) throw new Error(`Files must be smaller than ${limit} MB`);
 
   const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
   const path = `${new Date().getFullYear()}/${crypto.randomUUID()}.${ext}`;
